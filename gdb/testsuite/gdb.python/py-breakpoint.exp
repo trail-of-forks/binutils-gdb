@@ -51,11 +51,13 @@ proc_with_prefix test_bkpt_basic { } {
 	return 0
     }
 
+    set repr_pattern "<gdb.Breakpoint number=-?$decimal hits=-?$decimal\( thread=$decimal\)?\( task=$decimal\)?\( enable_count=$decimal\)?>"
+
     # Now there should be one breakpoint: main.
     gdb_py_test_silent_cmd "python blist = gdb.breakpoints()" \
 	"Get Breakpoint List" 0
-    gdb_test "python print (blist\[0\])" \
-	"<gdb.Breakpoint object at $hex>" "Check obj exists @main"
+    gdb_test "python print (repr (blist\[0\]))" \
+	"$repr_pattern" "Check obj exists @main"
     gdb_test "python print (blist\[0\].location)" \
 	"main" "Check breakpoint location @main"
     gdb_test "python print (blist\[0\].pending)" "False" \
@@ -72,12 +74,12 @@ proc_with_prefix test_bkpt_basic { } {
 	"Get Breakpoint List" 0
     gdb_test "python print (len(blist))" \
 	"2" "Check for two breakpoints"
-    gdb_test "python print (blist\[0\])" \
-	"<gdb.Breakpoint object at $hex>" "Check obj exists @main 2"
+    gdb_test "python print (repr (blist\[0\]))" \
+	"$repr_pattern" "Check obj exists @main 2"
     gdb_test "python print (blist\[0\].location)" \
 	"main" "Check breakpoint location @main 2"
-    gdb_test "python print (blist\[1\])" \
-	"<gdb.Breakpoint object at $hex>" "Check obj exists @mult_line"
+    gdb_test "python print (repr (blist\[1\]))" \
+	"$repr_pattern" "Check obj exists @mult_line"
 
     gdb_test "python print (blist\[1\].location)" \
 	"py-breakpoint\.c:${mult_line}*" \
@@ -225,14 +227,16 @@ proc_with_prefix test_bkpt_invisible { } {
 	return 0
     }
 
+    set repr_pattern "<gdb.Breakpoint number=-?$decimal hits=-?$decimal\( thread=$decimal\)?\( task=$decimal\)?\( enable_count=$decimal\)?>"
+
     delete_breakpoints
     set ibp_location [gdb_get_line_number "Break at multiply."]
     gdb_py_test_silent_cmd  "python ibp = gdb.Breakpoint(\"$ibp_location\", internal=False)" \
 	"Set invisible breakpoint" 0
     gdb_py_test_silent_cmd "python ilist = gdb.breakpoints()" \
 	"Get Breakpoint List" 0
-    gdb_test "python print (ilist\[0\])" \
-	"<gdb.Breakpoint object at $hex>" "Check invisible bp obj exists 1"
+    gdb_test "python print (repr (ilist\[0\]))" \
+	"$repr_pattern" "Check invisible bp obj exists 1"
     gdb_test "python print (ilist\[0\].location)" \
 	"py-breakpoint\.c:$ibp_location*" "Check breakpoint location 1"
     gdb_test "python print (ilist\[0\].visible)" \
@@ -244,8 +248,8 @@ proc_with_prefix test_bkpt_invisible { } {
 	"Set invisible breakpoint" 0
     gdb_py_test_silent_cmd "python ilist = gdb.breakpoints()" \
 	"Get Breakpoint List" 0
-    gdb_test "python print (ilist\[0\])" \
-	"<gdb.Breakpoint object at $hex>" "Check invisible bp obj exists 2"
+    gdb_test "python print (repr (ilist\[0\]))" \
+	"$repr_pattern" "Check invisible bp obj exists 2"
     gdb_test "python print (ilist\[0\].location)" \
 	"py-breakpoint\.c:$ibp_location*" "Check breakpoint location 2"
     gdb_test "python print (ilist\[0\].visible)" \
