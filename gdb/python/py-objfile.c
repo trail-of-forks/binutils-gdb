@@ -704,6 +704,18 @@ objfile_to_objfile_object (struct objfile *objfile)
   return gdbpy_ref<>::new_reference (result);
 }
 
+struct objfile *
+objfile_object_to_objfile (PyObject *self)
+{
+  if (!PyObject_TypeCheck (self, &objfile_object_type))
+    return nullptr;
+
+  auto objfile_object = (struct objfile_object*) self;
+  OBJFPY_REQUIRE_VALID (objfile_object);
+
+  return objfile_object->objfile;
+}
+
 static int CPYCHECKER_NEGATIVE_RESULT_SETS_EXCEPTION
 gdbpy_initialize_objfile (void)
 {

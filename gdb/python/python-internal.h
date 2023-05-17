@@ -289,6 +289,8 @@ extern PyTypeObject frame_object_type
     CPYCHECKER_TYPE_OBJECT_FOR_TYPEDEF ("frame_object");
 extern PyTypeObject thread_object_type
     CPYCHECKER_TYPE_OBJECT_FOR_TYPEDEF ("thread_object");
+extern PyTypeObject float_format_object_type
+    CPYCHECKER_TYPE_OBJECT_FOR_TYPEDEF ("float_format");
 
 /* Ensure that breakpoint_object_type is initialized and return true.  If
    breakpoint_object_type can't be initialized then set a suitable Python
@@ -431,6 +433,17 @@ gdb::unique_xmalloc_ptr<char> gdbpy_parse_command_name
 PyObject *gdbpy_register_tui_window (PyObject *self, PyObject *args,
 				     PyObject *kw);
 
+PyObject *gdbpy_init_type (PyObject *self, PyObject *args);
+PyObject *gdbpy_init_integer_type (PyObject *self, PyObject *args);
+PyObject *gdbpy_init_character_type (PyObject *self, PyObject *args);
+PyObject *gdbpy_init_boolean_type (PyObject *self, PyObject *args);
+PyObject *gdbpy_init_float_type (PyObject *self, PyObject *args);
+PyObject *gdbpy_init_decfloat_type (PyObject *self, PyObject *args);
+PyObject *gdbpy_can_create_complex_type (PyObject *self, PyObject *args);
+PyObject *gdbpy_init_complex_type (PyObject *self, PyObject *args);
+PyObject *gdbpy_init_pointer_type (PyObject *self, PyObject *args);
+PyObject *gdbpy_init_fixed_point_type (PyObject *self, PyObject *args);
+
 PyObject *symtab_and_line_to_sal_object (struct symtab_and_line sal);
 PyObject *symtab_to_symtab_object (struct symtab *symtab);
 PyObject *symbol_to_symbol_object (struct symbol *sym);
@@ -480,6 +493,8 @@ struct symtab *symtab_object_to_symtab (PyObject *obj);
 struct symtab_and_line *sal_object_to_symtab_and_line (PyObject *obj);
 frame_info_ptr frame_object_to_frame_info (PyObject *frame_obj);
 struct gdbarch *arch_object_to_gdbarch (PyObject *obj);
+struct objfile *objfile_object_to_objfile (PyObject *self);
+struct floatformat *float_format_object_as_float_format (PyObject *self);
 
 /* Convert Python object OBJ to a program_space pointer.  OBJ must be a
    gdb.Progspace reference.  Return nullptr if the gdb.Progspace is not

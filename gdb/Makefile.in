@@ -431,6 +431,8 @@ SUBDIR_PYTHON_SRCS = \
 	python/py-threadevent.c \
 	python/py-tui.c \
 	python/py-type.c \
+	python/py-type-init.c \
+	python/py-float-format.c \
 	python/py-unwind.c \
 	python/py-utils.c \
 	python/py-value.c \

@@ -388,3 +388,13 @@ if { [build_inferior "${binfile}-cxx" "c++"] == 0 } {
       test_type_equality
   }
 }
+
+# Test python type construction
+gdb_test "python t = gdb.init_type(gdb.objfiles ()\[0\], gdb.TYPE_CODE_INT, 24, 'long short int')" \
+  "" "construct a new type from inside python"
+gdb_test "python print (t.code)" \
+  "8" "check the code for the python-constructed type"
+gdb_test "python print (t.sizeof)" \
+  "3" "check the size for the python-constructed type"
+gdb_test "python print (t.name)" \
+  "long short int" "check the name for the python-constructed type"

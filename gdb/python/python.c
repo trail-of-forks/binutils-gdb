@@ -2521,6 +2521,47 @@ Return current recording object." },
     "stop_recording () -> None.\n\
 Stop current recording." },
 
+  /* Type initialization functions. */
+  { "init_type", gdbpy_init_type, METH_VARARGS,
+    "init_type (objfile, type_code, bit_length, name) -> type\n\
+    Creates a new type with the given bit length and type code, owned\
+    by the given objfile." },
+  { "init_integer_type", gdbpy_init_integer_type, METH_VARARGS,
+    "init_integer_type (objfile, bit_length, unsigned, name) -> type\n\
+    Creates a new integer type with the given bit length and \
+    signedness, owned by the given objfile." },
+  { "init_character_type", gdbpy_init_character_type, METH_VARARGS,
+    "init_character_type (objfile, bit_length, unsigned, name) -> type\n\
+    Creates a new character type with the given bit length and \
+    signedness, owned by the given objfile." },
+  { "init_boolean_type", gdbpy_init_boolean_type, METH_VARARGS,
+    "init_boolean_type (objfile, bit_length, unsigned, name) -> type\n\
+    Creates a new boolean type with the given bit length and \
+    signedness, owned by the given objfile." },
+  { "init_float_type", gdbpy_init_float_type, METH_VARARGS,
+    "init_float_type (objfile, float_format, name) -> type\n\
+    Creates a new floating point type with the given bit length and \
+    format, owned by the given objfile." },
+  { "init_decfloat_type", gdbpy_init_decfloat_type, METH_VARARGS,
+    "init_decfloat_type (objfile, bit_length, name) -> type\n\
+    Creates a new decimal float type with the given bit length,\
+    owned by the given objfile." },
+  { "can_create_complex_type", gdbpy_can_create_complex_type, METH_VARARGS,
+    "can_create_complex_type (type) -> bool\n\
+     Returns whether a given type can form a new complex type." },
+  { "init_complex_type", gdbpy_init_complex_type, METH_VARARGS,
+    "init_complex_type (base_type, name) -> type\n\
+    Creates a new complex type whose components belong to the\
+    given type, owned by the given objfile." },
+  { "init_pointer_type", gdbpy_init_pointer_type, METH_VARARGS,
+    "init_pointer_type (objfile, target_type, bit_length, name) -> type\n\
+    Creates a new pointer type with the given bit length, pointing\
+    to the given target type, and owned by the given objfile." },
+ { "init_fixed_point_type", gdbpy_init_fixed_point_type, METH_VARARGS,
+   "init_fixed_point_type (objfile, bit_length, unsigned, name) -> type\n\
+   Creates a new fixed point type with the given bit length and\
+   signedness, owned by the given objfile." },
+
   { "lookup_type", (PyCFunction) gdbpy_lookup_type,
     METH_VARARGS | METH_KEYWORDS,
     "lookup_type (name [, block]) -> type\n\
