@@ -480,7 +480,6 @@ struct symtab *symtab_object_to_symtab (PyObject *obj);
 struct symtab_and_line *sal_object_to_symtab_and_line (PyObject *obj);
 frame_info_ptr frame_object_to_frame_info (PyObject *frame_obj);
 struct gdbarch *arch_object_to_gdbarch (PyObject *obj);
-struct objfile *objfile_object_to_objfile (PyObject *self);
 struct floatformat *float_format_object_as_float_format (PyObject *self);
 
 /* Convert Python object OBJ to a program_space pointer.  OBJ must be a
