@@ -740,24 +740,6 @@ Look up a global symbol in this objfile and return it." },
     "lookup_static_symbol (name [, domain]).\n\
 Look up a static-linkage global symbol in this objfile and return it." },
 
-  { "add_type_symbol", (PyCFunction) objfpy_add_type_symbol,
-    METH_VARARGS | METH_KEYWORDS,
-    "add_type_symbol(name: string, type: gdb.Type, [language: string])\n\
-    Registers a new symbol inside VAR_DOMAIN/LOC_TYPEDEF, with the given name\
-    referring to the given type." },
-
-  { "add_label_symbol", (PyCFunction) objfpy_add_label_symbol,
-    METH_VARARGS | METH_KEYWORDS,
-    "add_label_symbol(name: string, address: int, [language: string])\n\
-    Registers a new symbol inside LABEL_DOMAIN/LOC_LABEL, with the given name\
-    pointing to the given address." },
-
-  { "add_static_symbol", (PyCFunction) objfpy_add_static_symbol,
-    METH_VARARGS | METH_KEYWORDS,
-    "add_static_symbol(name: string, address: int, [language: string])\n\
-    Registers a new symbol inside VAR_DOMAIN/LOC_STATIC, with the given name\
-    pointing to the given address." },
-
   { NULL }
 };
 

@@ -47,13 +47,17 @@ public:
 /* Shorthand for a unique_ptr to a symbol. */
 typedef std::unique_ptr<symbol_def> symbol_def_up;
 
-struct objfile_builder_object
+/* Data being held by the gdb.ObjfileBuilder.
+ *
+ * This structure needs to have its constructor run in order for its lifetime
+ * to begin. Because of how Python handles its objects, we can't just reconstruct
+ * the object structure as a whole, as that would overwrite things the runtime
+ * cares about, so these fields had to be broken off into their own structure. */
+struct objfile_builder_data
 {
-  PyObject_HEAD
-
   /* Indicates whether the objfile has already been built and added to the
    * current context. We enforce that objfiles can't be installed twice. */
-  bool installed;
+  bool installed = false;
 
   /* The symbols that will be added to new newly built objfile. */
   std::unordered_map<std::string, symbol_def_up> symbols;
@@ -68,18 +72,27 @@ struct objfile_builder_object
   }
 };
 
-/* Convenience function that performs a checked coversion from a PyObject to
- * a objfile_builder_object structure pointer. */
-inline static struct objfile_builder_object *
-validate_objfile_builder_object (PyObject *self);
+/* Structure backing the gdb.ObjfileBuilder type. */
+struct objfile_builder_object
+{
+  PyObject_HEAD
+
+  /* See objfile_builder_data. */
+  objfile_builder_data inner;
+};
+
+extern PyTypeObject objfile_builder_object_type
+    CPYCHECKER_TYPE_OBJECT_FOR_TYPEDEF ("objfile_builder_object_type");
 
 /* Constructs a new objfile from an objfile_builder. */
 static struct objfile *
 build_new_objfile (const objfile_builder_object& builder)
 {
-  gdb_assert (!builder.installed);
+  gdb_assert (!builder.inner.installed);
 
-  auto of = objfile::make (nullptr, builder.name.c_str (), OBJF_READNOW, nullptr);
+  auto of = objfile::make (nullptr, builder.inner.name.c_str (), 
+                           OBJF_READNOW | OBJF_NOT_FILENAME, 
+                           nullptr);
 
   /* Setup object file sections. */
   of->sections_start = OBSTACK_CALLOC (&of->objfile_obstack,
@@ -93,9 +106,9 @@ build_new_objfile (const objfile_builder_object& builder)
       sec->ovly_mapped = false;
       
       /* We're not being backed by BFD. So we have no real section data to speak 
-      * of, but, because specifying sections requires BFD structures, we have to
-      * play a little game of predend. */
-      auto bfd = obstack_new<bfd_section>(&of->objfile_obstack);
+       * of, but, because specifying sections requires BFD structures, we have to
+       * play a little game of predend. */
+      auto bfd = obstack_new<bfd_section> (&of->objfile_obstack);
       bfd->vma = 0;
       bfd->size = 0;
       sec->the_bfd_section = bfd;
@@ -110,20 +123,30 @@ build_new_objfile (const objfile_builder_object& builder)
   of->sect_index_rodata = 2;
   of->sect_index_bss = 3;
 
+  /* While buildsym_compunit expects the symbol function pointer structure to be
+   * present, it also gracefully handles the case where all of the pointers in
+   * it are set to null. So, make sure we have a valid structure, but there's
+   * no need to do more than that. */
+  of->sf = obstack_new<struct sym_fns> (&of->objfile_obstack);
+
   /* Construct the minimal symbols. */
   minimal_symbol_reader msym (of);
-  for (const auto& [name, symbol] : builder.symbols)
+  for (const auto& [name, symbol] : builder.inner.symbols)
       symbol->register_msymbol (name, of, msym);
   msym.install ();
 
   /* Construct the full symbols. */
-  buildsym_compunit fsym (of, builder.name.c_str (), "", language_c, 0);
-  for (const auto& [name, symbol] : builder.symbols)
+  buildsym_compunit fsym (of, builder.inner.name.c_str (), "", language_c, 0);
+  for (const auto& [name, symbol] : builder.inner.symbols)
     symbol->register_symbol (name, of, fsym);
   fsym.end_compunit_symtab (0);
 
-  /* Notify the rest of GDB this objfile has been created. */
+  /* Notify the rest of GDB this objfile has been created. Requires 
+   * OBJF_NOT_FILENAME to be used, to prevent any of the functions attatched to
+   * the observable from trying to dereference of->bfd. */
   gdb::observers::new_objfile.notify (of);
+
+  return of;
 }
 
 /* Implementation of the quick symbol functions used by the objfiles created 
@@ -227,6 +250,16 @@ parse_language (const char *language)
     return language_unknown;
 }
 
+/* Convenience function that performs a checked coversion from a PyObject to
+ * a objfile_builder_object structure pointer. */
+inline static struct objfile_builder_object *
+validate_objfile_builder_object (PyObject *self)
+{
+  if (!PyObject_TypeCheck (self, &objfile_builder_object_type))
+    return nullptr;
+  return (struct objfile_builder_object*) self;
+}
+
 /* Registers symbols added with add_label_symbol. */
 class typedef_symbol_def : public symbol_def
 {
@@ -260,7 +293,7 @@ objbdpy_add_type_symbol (PyObject *self, PyObject *args, PyObject *kw)
   static const char *format = "sO|s";
   static const char *keywords[] =
     {
-      "name", "type", "language",NULL
+      "name", "type", "language", NULL
     };
 
   PyObject *type_object;
@@ -292,7 +325,7 @@ objbdpy_add_type_symbol (PyObject *self, PyObject *args, PyObject *kw)
   def->type = type;
   def->language = language;
 
-  builder->add_symbol_def (name, std::move (def));
+  builder->inner.add_symbol_def (name, std::move (def));
 
   Py_RETURN_NONE;
 }
@@ -318,6 +351,7 @@ public:
                                 struct objfile *objfile,
                                 buildsym_compunit& builder) const override
   {
+    printf("Adding label %s\n", name.c_str ());
     auto symbol = new_symbol (objfile, name.c_str (), language, LABEL_DOMAIN,
                               LOC_LABEL, objfile->sect_index_text);
 
@@ -334,7 +368,7 @@ objbdpy_add_label_symbol (PyObject *self, PyObject *args, PyObject *kw)
   static const char *format = "sk|s";
   static const char *keywords[] =
     {
-      "name", "address", "language",NULL
+      "name", "address", "language", NULL
     };
 
   const char *name;
@@ -362,7 +396,7 @@ objbdpy_add_label_symbol (PyObject *self, PyObject *args, PyObject *kw)
   def->address = address;
   def->language = language;
 
-  builder->add_symbol_def (name, std::move (def));
+  builder->inner.add_symbol_def (name, std::move (def));
 
   Py_RETURN_NONE;
 }
@@ -431,13 +465,119 @@ objbdpy_add_static_symbol (PyObject *self, PyObject *args, PyObject *kw)
   def->address = address;
   def->language = language;
 
-  builder->add_symbol_def (name, std::move (def));
+  builder->inner.add_symbol_def (name, std::move (def));
 
   Py_RETURN_NONE;
 }
 
+/* Builds the object file. */
+static PyObject *
+objbdpy_build (PyObject *self, PyObject *args)
+{
+  auto builder = validate_objfile_builder_object (self);
+  if (builder == nullptr)
+    return nullptr;
+
+  if (builder->inner.installed)
+    {
+      PyErr_SetString (PyExc_ValueError, "build() cannot be run twice on the \
+                       same object");
+      return nullptr;
+    }
+  auto of = build_new_objfile (*builder);
+  builder->inner.installed = true;
+
+
+  auto objpy = objfile_to_objfile_object (of).get ();
+  Py_INCREF(objpy);
+  return objpy;
+}
+
+/* Implements the __init__() function. */
+static int
+objbdpy_init (PyObject *self0, PyObject *args, PyObject *kw)
+{
+  printf ("Pain1\n");
+  static const char *format = "s";
+  static const char *keywords[] =
+    {
+      "name", NULL
+    };
+
+  const char *name;
+  if (!gdb_PyArg_ParseTupleAndKeywords (args, kw, format, keywords, &name))
+    return -1;
+
+  auto self = (objfile_builder_object *)self0;
+  self->inner.name = name;
+  self->inner.symbols.clear ();
+
+  return 0;
+}
+
+/* The function handling construction of the ObjfileBuilder object. 
+ *
+ * We need to have a custom function here as, even though Python manages the 
+ * memory backing the object up, it assumes clearing the memory is enough to
+ * begin its lifetime, which is not the case here, and would lead to undefined 
+ * behavior as soon as we try to use it in any meaningful way.
+ * 
+ * So, what we have to do here is manually begin the lifecycle of our new object
+ * by constructing it in place, using the memory region Python just allocated
+ * for us. This ensures the object will have already started its lifetime by 
+ * the time we start using it. */
+static PyObject *
+objbdpy_new (PyTypeObject *subtype, PyObject *args, PyObject *kwds)
+{
+  printf ("Pain\n");
+  objfile_builder_object *region = 
+    (objfile_builder_object *) subtype->tp_alloc(subtype, 1);
+  gdb_assert ((size_t)region % alignof (objfile_builder_object) == 0);
+  gdb_assert (region != nullptr);
+
+  new (&region->inner) objfile_builder_data ();
+  
+  printf ("Pain over\n");
+  return (PyObject *)region;
+}
+
+/* The function handling destruction of the ObjfileBuilder object. 
+ *
+ * While running the destructor of our object isn't _strictly_ necessary, we
+ * would very much like for the memory it owns to be freed, but, because it was
+ * constructed in place, we have to call its destructor manually here. */
+static void 
+objbdpy_dealloc (PyObject *self0)
+{
+  
+  printf ("~Pain\n");
+  auto self = (objfile_builder_object *)self0;
+  PyTypeObject *tp = Py_TYPE(self);
+  
+  self->inner.~objfile_builder_data ();
+  
+  tp->tp_free(self);
+  Py_DECREF(tp);
+  printf ("~Pain over\n");
+}
+
+static int CPYCHECKER_NEGATIVE_RESULT_SETS_EXCEPTION
+gdbpy_initialize_objfile_builder (void)
+{
+  if (PyType_Ready (&objfile_builder_object_type) < 0)
+    return -1;
+
+  return gdb_pymodule_addobject (gdb_module, "ObjfileBuilder",
+				 (PyObject *) &objfile_builder_object_type);
+}
+
+GDBPY_INITIALIZE_FILE (gdbpy_initialize_objfile_builder);
+
 static PyMethodDef objfile_builder_object_methods[] =
 {
+  { "build", (PyCFunction) objbdpy_build, METH_NOARGS,
+    "add_separate_debug_file (file_name).\n\
+Add FILE_NAME to the list of files containing debug info for the objfile." },
   { "add_type_symbol", (PyCFunction) objbdpy_add_type_symbol,
     METH_VARARGS | METH_KEYWORDS,
     "add_separate_debug_file (file_name).\n\
@@ -458,46 +598,40 @@ PyTypeObject objfile_builder_object_type = {
   "gdb.ObjfileBuilder",               /* tp_name */
   sizeof (objfile_builder_object),    /* tp_basicsize */
   0,                                  /* tp_itemsize */
-  0,                                  /* tp_dealloc */
-  0,                                  /* tp_print */
-  0,                                  /* tp_getattr */
-  0,                                  /* tp_setattr */
-  0,                                  /* tp_compare */
-  0,                                  /* tp_repr */
-  0,                                  /* tp_as_number */
-  0,                                  /* tp_as_sequence */
-  0,                                  /* tp_as_mapping */
-  0,                                  /* tp_hash  */
-  0,                                  /* tp_call */
-  0,                                  /* tp_str */
-  0,                                  /* tp_getattro */
-  0,                                  /* tp_setattro */
-  0,                                  /* tp_as_buffer */
+  objbdpy_dealloc,                    /* tp_dealloc */
+  0,                                  /* tp_vectorcall_offset */
+  nullptr,                            /* tp_getattr */
+  nullptr,                            /* tp_setattr */
+  nullptr,                            /* tp_compare */
+  nullptr,                            /* tp_repr */
+  nullptr,                            /* tp_as_number */
+  nullptr,                            /* tp_as_sequence */
+  nullptr,                            /* tp_as_mapping */
+  nullptr,                            /* tp_hash  */
+  nullptr,                            /* tp_call */
+  nullptr,                            /* tp_str */
+  nullptr,                            /* tp_getattro */
+  nullptr,                            /* tp_setattro */
+  nullptr,                            /* tp_as_buffer */
   Py_TPFLAGS_DEFAULT,                 /* tp_flags */
   "GDB object file builder",          /* tp_doc */
-  0,                                  /* tp_traverse */
-  0,                                  /* tp_clear */
-  0,                                  /* tp_richcompare */
+  nullptr,                            /* tp_traverse */
+  nullptr,                            /* tp_clear */
+  nullptr,                            /* tp_richcompare */
   0,                                  /* tp_weaklistoffset */
-  0,                                  /* tp_iter */
-  0,                                  /* tp_iternext */
+  nullptr,                            /* tp_iter */
+  nullptr,                            /* tp_iternext */
   objfile_builder_object_methods,     /* tp_methods */
-  0,                                  /* tp_members */
-  0,                                  /* tp_getset */
-  0,                                  /* tp_base */
-  0,                                  /* tp_dict */
-  0,                                  /* tp_descr_get */
-  0,                                  /* tp_descr_set */
+  nullptr,                            /* tp_members */
+  nullptr,                            /* tp_getset */
+  nullptr,                            /* tp_base */
+  nullptr,                            /* tp_dict */
+  nullptr,                            /* tp_descr_get */
+  nullptr,                            /* tp_descr_set */
   0,                                  /* tp_dictoffset */
-  0,                                  /* tp_init */
-  0,                                  /* tp_alloc */
+  objbdpy_init,                       /* tp_init */
+  PyType_GenericAlloc,                /* tp_alloc */
+  objbdpy_new,                        /* tp_new */
 };
 
-inline static struct objfile_builder_object *
-validate_objfile_builder_object (PyObject *self)
-{
-  if (!PyObject_TypeCheck (self, &objfile_builder_object_type))
-    return nullptr;
-  return (struct objfile_builder_object*) self;
-}
 
