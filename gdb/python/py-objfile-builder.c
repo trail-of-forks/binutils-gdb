@@ -36,6 +36,8 @@ static_assert (std::is_trivially_copyable_v<struct symbol>);
 class symbol_def
 {
 public:
+  virtual ~symbol_def () = default;
+
   virtual void register_msymbol (const std::string& name, 
                                  struct objfile* objfile,
                                  minimal_symbol_reader& reader) const = 0;
@@ -128,6 +130,12 @@ build_new_objfile (const objfile_builder_object& builder)
    * it are set to null. So, make sure we have a valid structure, but there's
    * no need to do more than that. */
   of->sf = obstack_new<struct sym_fns> (&of->objfile_obstack);
+
+  /* We need to tell GDB what architecture the objfile uses. */
+  if (has_stack_frames ())
+    of->per_bfd->gdbarch = get_frame_arch (get_selected_frame (nullptr));
+  else
+    of->per_bfd->gdbarch = target_gdbarch ();
 
   /* Construct the minimal symbols. */
   minimal_symbol_reader msym (of);
