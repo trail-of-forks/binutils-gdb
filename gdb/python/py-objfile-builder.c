@@ -75,6 +75,7 @@ struct objfile_builder_data
 };
 
 /* Structure backing the gdb.ObjfileBuilder type. */
+
 struct objfile_builder_object
 {
   PyObject_HEAD
@@ -113,6 +114,8 @@ build_new_objfile (const objfile_builder_object& builder)
       auto bfd = obstack_new<bfd_section> (&of->objfile_obstack);
       bfd->vma = 0;
       bfd->size = 0;
+      bfd->lma = 0; /* Prevents insert_section_p in objfiles.c from trying to 
+                     * dereference the bfd structure we don't have. */
       sec->the_bfd_section = bfd;
     };
   init_section (&of->sections_start[0]);
