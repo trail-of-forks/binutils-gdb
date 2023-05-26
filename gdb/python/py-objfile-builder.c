@@ -301,7 +301,7 @@ public:
 static PyObject *
 objbdpy_add_type_symbol (PyObject *self, PyObject *args, PyObject *kw)
 {
-  static const char *format = "sO|s";
+  static const char *format = "sOs";
   static const char *keywords[] =
     {
       "name", "type", "language", NULL
@@ -376,7 +376,7 @@ public:
 static PyObject *
 objbdpy_add_label_symbol (PyObject *self, PyObject *args, PyObject *kw)
 {
-  static const char *format = "sk|s";
+  static const char *format = "sks";
   static const char *keywords[] =
     {
       "name", "address", "language", NULL
@@ -445,7 +445,7 @@ public:
 static PyObject *
 objbdpy_add_static_symbol (PyObject *self, PyObject *args, PyObject *kw)
 {
-  static const char *format = "sk|s";
+  static const char *format = "sks";
   static const char *keywords[] =
     {
       "name", "address", "language", NULL
@@ -587,20 +587,20 @@ GDBPY_INITIALIZE_FILE (gdbpy_initialize_objfile_builder);
 static PyMethodDef objfile_builder_object_methods[] =
 {
   { "build", (PyCFunction) objbdpy_build, METH_NOARGS,
-    "add_separate_debug_file (file_name).\n\
-Add FILE_NAME to the list of files containing debug info for the objfile." },
+    "build ().\n\
+Build a new objfile containing the symbols added to builder." },
   { "add_type_symbol", (PyCFunction) objbdpy_add_type_symbol,
     METH_VARARGS | METH_KEYWORDS,
-    "add_separate_debug_file (file_name).\n\
-Add FILE_NAME to the list of files containing debug info for the objfile." },
+    "add_type_symbol (name [str], type [gdb.Type], language [str]).\n\
+Add a new type symbol in the given language, associated with the given type." },
   { "add_label_symbol", (PyCFunction) objbdpy_add_label_symbol,
     METH_VARARGS | METH_KEYWORDS,
-    "add_separate_debug_file (file_name).\n\
-Add FILE_NAME to the list of files containing debug info for the objfile." },
+    "add_label_symbol (name [str], address [int], language [str]).\n\
+Add a new label symbol in the given language, at the given address." },
   { "add_static_symbol", (PyCFunction) objbdpy_add_static_symbol,
     METH_VARARGS | METH_KEYWORDS,
-    "add_separate_debug_file (file_name).\n\
-Add FILE_NAME to the list of files containing debug info for the objfile." },
+    "add_static_symbol (name [str], address [int], language [str]).\n\
+Add a new static symbol in the given language, at the given address." },
   { NULL }
 };
 
