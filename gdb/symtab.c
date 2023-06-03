@@ -6307,6 +6307,7 @@ main_language (void)
 
   if (info->name_of_main.empty ())
     find_main_name ();
+  printf ("name: %s\n", info->name_of_main.c_str ());
 
   return info->language_of_main;
 }

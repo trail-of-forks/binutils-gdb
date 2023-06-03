@@ -1080,10 +1080,11 @@ write_gdbindex_1 (FILE *out_file,
 		  const data_buf &types_cu_list,
 		  const data_buf &addr_vec,
 		  const data_buf &symtab_vec,
-		  const data_buf &constant_pool)
+		  const data_buf &constant_pool,
+                  const data_buf &shortcuts)
 {
   data_buf contents;
-  const offset_type size_of_header = 6 * sizeof (offset_type);
+  const offset_type size_of_header = 7 * sizeof (offset_type);
   offset_type total_len = size_of_header;
 
   /* The version number.  */
@@ -1105,6 +1106,10 @@ write_gdbindex_1 (FILE *out_file,
   contents.append_offset (total_len);
   total_len += symtab_vec.size ();
 
+  /* The offset of the shortcut table from the start of the file.  */
+  contents.append_offset (total_len);
+  total_len += shortcuts.size ();
+
   /* The offset of the constant pool from the start of the file.  */
   contents.append_offset (total_len);
   total_len += constant_pool.size ();
@@ -1116,6 +1121,7 @@ write_gdbindex_1 (FILE *out_file,
   types_cu_list.file_write (out_file);
   addr_vec.file_write (out_file);
   symtab_vec.file_write (out_file);
+  shortcuts.file_write (out_file);
   constant_pool.file_write (out_file);
 
   assert_file_size (out_file, total_len);
@@ -1191,6 +1197,34 @@ write_cooked_index (cooked_index *table,
       add_index_entry (symtab, name, (entry->flags & IS_STATIC) != 0,
 		       kind, it->second);
     }
+}
+
+/* Write shortcut information. */
+
+static void
+write_shortcuts_table (cooked_index *table, data_buf& shortcuts,
+                       data_buf& cpool)
+{
+  const auto main_info = table->get_main ();
+  size_t main_name_offset = 0;
+  language lang = language_unknown;
+
+  if (main_info != nullptr)
+    {
+      lang = main_info->per_cu->lang ();
+
+      if (lang != language_unknown)
+        {
+          auto_obstack obstack;
+          const auto main_name = main_info->full_name (&obstack, true);
+
+          main_name_offset = cpool.size ();
+          cpool.append_cstr0 (main_name);
+        }
+    }
+
+  shortcuts.append_uint (4, BFD_ENDIAN_LITTLE, lang);
+  shortcuts.append_offset (main_name_offset);
 }
 
 /* Write contents of a .gdb_index section for OBJFILE into OUT_FILE.
@@ -1270,11 +1304,14 @@ write_gdbindex (dwarf2_per_bfd *per_bfd, cooked_index *table,
 
   write_hash_table (&symtab, symtab_vec, constant_pool);
 
+  data_buf shortcuts;
+  write_shortcuts_table (table, shortcuts, constant_pool);
+
   write_gdbindex_1(out_file, objfile_cu_list, types_cu_list, addr_vec,
-		   symtab_vec, constant_pool);
+		   symtab_vec, constant_pool, shortcuts);
 
   if (dwz_out_file != NULL)
-    write_gdbindex_1 (dwz_out_file, dwz_cu_list, {}, {}, {}, {});
+    write_gdbindex_1 (dwz_out_file, dwz_cu_list, {}, {}, {}, {}, {});
   else
     gdb_assert (dwz_cu_list.empty ());
 }

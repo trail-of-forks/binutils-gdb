@@ -88,6 +88,9 @@ struct mapped_gdb_index final : public mapped_index_base
   /* A pointer to the constant pool.  */
   gdb::array_view<const gdb_byte> constant_pool;
 
+  /* The shortcut table data. */
+  gdb::array_view<const gdb_byte> shortcut_table;
+
   /* Return the index into the constant pool of the name of the IDXth
      symbol in the symbol table.  */
   offset_type symbol_name_index (offset_type idx) const
@@ -608,7 +611,14 @@ to use the section anyway."),
   map->symbol_table
     = offset_view (gdb::array_view<const gdb_byte> (symbol_table,
 						    symbol_table_end));
+  ++i;
 
+  const gdb_byte *shortcut_table = addr + metadata[i];
+  const gdb_byte *shortcut_table_end = addr + metadata[i + 1];
+  map->shortcut_table
+    = gdb::array_view<const gdb_byte> (shortcut_table, shortcut_table_end);
+
+  /* BOOKMARK */
   ++i;
   map->constant_pool = buffer.slice (metadata[i]);
 
@@ -763,6 +773,36 @@ create_addrmap_from_gdb_index (dwarf2_per_objfile *per_objfile,
     = new (&per_bfd->obstack) addrmap_fixed (&per_bfd->obstack, &mutable_map);
 }
 
+/* Sets the name and language of the main function from the shortcut table. */
+
+static void
+set_main_name_from_gdb_index (dwarf2_per_objfile *per_objfile, 
+                              mapped_gdb_index *index)
+{
+  auto ptr = index->shortcut_table.data ();
+  const auto lang = extract_unsigned_integer (ptr, 4, BFD_ENDIAN_LITTLE);
+  if (lang >= nr_languages)
+    {
+      complaint (_(".gdb_index shortcut table has invalid main language %u"),
+                   (unsigned) lang);
+      return;
+    }
+  if (lang == language_unknown)
+    {
+      /* Don't bother if the language for the main symbol was not known or if
+       * there was no main symbol at all when the index was built. */
+      return;
+    }
+  ptr += 4;
+
+  const auto name_offset = extract_unsigned_integer (ptr, 
+                                                     sizeof (offset_type), 
+                                                     BFD_ENDIAN_LITTLE);
+  const auto name = (const char*) (index->constant_pool.data () + name_offset);
+
+  set_objfile_main_name (per_objfile->objfile, name, (enum language) lang);
+}
+
 /* See read-gdb-index.h.  */
 
 int
@@ -847,6 +887,8 @@ dwarf2_read_gdb_index
   finalize_all_units (per_bfd);
 
   create_addrmap_from_gdb_index (per_objfile, map.get ());
+
+  set_main_name_from_gdb_index (per_objfile, map.get ());
 
   per_bfd->index_table = std::move (map);
   per_bfd->quick_file_names_table =

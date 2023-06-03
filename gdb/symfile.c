@@ -61,6 +61,7 @@
 #include "cli/cli-style.h"
 #include "gdbsupport/forward-scope-exit.h"
 #include "gdbsupport/buildargv.h"
+#include "gdbsupport/checkpoint-timer.h" /* TAKE OUT OF PATCH ONCE DONE TESTING */
 
 #include <sys/types.h>
 #include <fcntl.h>
@@ -1194,6 +1195,8 @@ symbol_file_add_main (const char *args, symfile_add_flags add_flags)
   symbol_file_add_main_1 (args, add_flags, 0, 0);
 }
 
+gdb::checkpoint_timer add_main_timer;
+
 static void
 symbol_file_add_main_1 (const char *args, symfile_add_flags add_flags,
 			objfile_flags flags, CORE_ADDR reloff)
@@ -1209,7 +1212,13 @@ symbol_file_add_main_1 (const char *args, symfile_add_flags add_flags,
   reinit_frame_cache ();
 
   if ((add_flags & SYMFILE_NO_READ) == 0)
-    set_initial_language ();
+    {
+      
+      add_main_timer.begin ("set_initial_language ()");
+      set_initial_language ();
+      add_main_timer.end ();
+      add_main_timer.dump ();
+    }
 }
 
 void
@@ -1230,7 +1239,6 @@ symbol_file_clear (int from_tty)
   current_program_space->free_all_objfiles ();
 
   clear_symtab_users (0);
-
   gdb_assert (current_program_space->symfile_object_file == NULL);
   if (from_tty)
     gdb_printf (_("No symbol file now.\n"));
@@ -1693,16 +1701,24 @@ set_initial_language (void)
 {
   if (language_mode == language_mode_manual)
     return;
+  
+  add_main_timer.begin ("main_language ()");
   enum language lang = main_language ();
+  add_main_timer.end ();
   /* Make C the default language.  */
   enum language default_lang = language_c;
 
   if (lang == language_unknown)
     {
+      add_main_timer.begin ("main_name ()");
       const char *name = main_name ();
+      add_main_timer.end ();
+      
+      add_main_timer.begin ("lookup_symbol_in_language ()");
       struct symbol *sym
 	= lookup_symbol_in_language (name, NULL, VAR_DOMAIN, default_lang,
 				     NULL).symbol;
+      add_main_timer.end ();
 
       if (sym != NULL)
 	lang = sym->language ();
@@ -1713,7 +1729,9 @@ set_initial_language (void)
       lang = default_lang;
     }
 
+  add_main_timer.begin ("set_language ()");
   set_language (lang);
+  add_main_timer.end ();
   expected_language = current_language; /* Don't warn the user.  */
 }
 
