@@ -169,8 +169,16 @@ dwarf2_gdb_index::dump (struct objfile *objfile)
 
   mapped_gdb_index *index = (gdb::checked_static_cast<mapped_gdb_index *>
 			     (per_objfile->per_bfd->index_table.get ()));
+  
   gdb_printf (".gdb_index: version %d\n", index->version);
   gdb_printf ("\n");
+
+  for (size_t i = 0; i < index->symbol_name_count (); ++i)
+    {
+      const auto name = index->symbol_name_at (i, per_objfile);
+      if (*name != 0)
+        gdb_printf ("    %s\n", name);
+    }
 }
 
 /* Struct used to manage iterating over all CUs looking for a symbol.  */
