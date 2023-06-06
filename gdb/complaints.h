@@ -47,7 +47,7 @@ have_complaint ()
 #define complaint(FMT, ...)					\
   do								\
     {								\
-      /* if (have_complaint ()) */					\
+      if (have_complaint ())					\
 	complaint_internal (FMT, ##__VA_ARGS__);		\
     }								\
   while (0)
