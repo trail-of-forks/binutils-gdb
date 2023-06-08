@@ -1209,9 +1209,7 @@ symbol_file_add_main_1 (const char *args, symfile_add_flags add_flags,
   reinit_frame_cache ();
 
   if ((add_flags & SYMFILE_NO_READ) == 0)
-    {
-      set_initial_language ();
-    }
+    set_initial_language ();
 }
 
 void
@@ -1232,6 +1230,7 @@ symbol_file_clear (int from_tty)
   current_program_space->free_all_objfiles ();
 
   clear_symtab_users (0);
+
   gdb_assert (current_program_space->symfile_object_file == NULL);
   if (from_tty)
     gdb_printf (_("No symbol file now.\n"));
@@ -1694,7 +1693,6 @@ set_initial_language (void)
 {
   if (language_mode == language_mode_manual)
     return;
-  
   enum language lang = main_language ();
   /* Make C the default language.  */
   enum language default_lang = language_c;
@@ -1702,7 +1700,6 @@ set_initial_language (void)
   if (lang == language_unknown)
     {
       const char *name = main_name ();
-      
       struct symbol *sym
 	= lookup_symbol_in_language (name, NULL, VAR_DOMAIN, default_lang,
 				     NULL).symbol;

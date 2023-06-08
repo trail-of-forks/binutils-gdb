@@ -1088,7 +1088,7 @@ write_gdbindex_1 (FILE *out_file,
   offset_type total_len = size_of_header;
 
   /* The version number.  */
-  contents.append_offset (8);
+  contents.append_offset (9);
 
   /* The offset of the CU list from the start of the file.  */
   contents.append_offset (total_len);

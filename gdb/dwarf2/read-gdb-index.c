@@ -169,7 +169,7 @@ dwarf2_gdb_index::dump (struct objfile *objfile)
 
   mapped_gdb_index *index = (gdb::checked_static_cast<mapped_gdb_index *>
 			     (per_objfile->per_bfd->index_table.get ()));
-  
+
   gdb_printf (".gdb_index: version %d\n", index->version);
   gdb_printf ("\n");
 }
@@ -587,7 +587,7 @@ to use the section anyway."),
 
   /* Indexes with higher version than the one supported by GDB may be no
      longer backward compatible.  */
-  if (version > 8)
+  if (version > 9)
     return 0;
 
   map->version = version;
@@ -619,7 +619,6 @@ to use the section anyway."),
   map->shortcut_table
     = gdb::array_view<const gdb_byte> (shortcut_table, shortcut_table_end);
 
-  /* BOOKMARK */
   ++i;
   map->constant_pool = buffer.slice (metadata[i]);
 
