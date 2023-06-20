@@ -614,12 +614,15 @@ to use the section anyway."),
 						    symbol_table_end));
   ++i;
 
-  const gdb_byte *shortcut_table = addr + metadata[i];
-  const gdb_byte *shortcut_table_end = addr + metadata[i + 1];
-  map->shortcut_table
-    = gdb::array_view<const gdb_byte> (shortcut_table, shortcut_table_end);
+  if (version >= 9)
+    {
+      const gdb_byte *shortcut_table = addr + metadata[i];
+      const gdb_byte *shortcut_table_end = addr + metadata[i + 1];
+      map->shortcut_table
+        = gdb::array_view<const gdb_byte> (shortcut_table, shortcut_table_end);
+      ++i;
+    }
 
-  ++i;
   map->constant_pool = buffer.slice (metadata[i]);
 
   if (map->constant_pool.empty () && !map->symbol_table.empty ())
@@ -779,15 +782,21 @@ static void
 set_main_name_from_gdb_index (dwarf2_per_objfile *per_objfile, 
                               mapped_gdb_index *index)
 {
+  const auto expected_size = 4 + sizeof (offset_type);
+  if (index->shortcut_table.size () != expected_size)
+    /* The data in the section is not present, is corrupted or is in a version
+     * we don't know about. Regardless, we can't make use of it. */
+    return;
+
   auto ptr = index->shortcut_table.data ();
-  const auto lang = extract_unsigned_integer (ptr, 4, BFD_ENDIAN_LITTLE);
-  if (lang >= nr_languages)
+  const auto dw_lang = extract_unsigned_integer (ptr, 4, BFD_ENDIAN_LITTLE);
+  if (dw_lang >= DW_LANG_hi_user)
     {
       complaint (_(".gdb_index shortcut table has invalid main language %u"),
-                   (unsigned) lang);
+                   (unsigned) dw_lang);
       return;
     }
-  if (lang == language_unknown)
+  if (dw_lang == 0)
     {
       /* Don't bother if the language for the main symbol was not known or if
        * there was no main symbol at all when the index was built. */
@@ -795,6 +804,7 @@ set_main_name_from_gdb_index (dwarf2_per_objfile *per_objfile,
     }
   ptr += 4;
 
+  const auto lang = dwarf_lang_to_enum_language (dw_lang);
   const auto name_offset = extract_unsigned_integer (ptr, 
                                                      sizeof (offset_type), 
                                                      BFD_ENDIAN_LITTLE);

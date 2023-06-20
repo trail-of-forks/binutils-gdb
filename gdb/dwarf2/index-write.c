@@ -1207,13 +1207,13 @@ write_shortcuts_table (cooked_index *table, data_buf& shortcuts,
 {
   const auto main_info = table->get_main ();
   size_t main_name_offset = 0;
-  language lang = language_unknown;
+  dwarf_source_language dw_lang = (dwarf_source_language)0;
 
   if (main_info != nullptr)
     {
-      lang = main_info->per_cu->lang ();
+      dw_lang = main_info->per_cu->dw_lang;
 
-      if (lang != language_unknown)
+      if (dw_lang != 0)
         {
           auto_obstack obstack;
           const auto main_name = main_info->full_name (&obstack, true);
@@ -1223,7 +1223,7 @@ write_shortcuts_table (cooked_index *table, data_buf& shortcuts,
         }
     }
 
-  shortcuts.append_uint (4, BFD_ENDIAN_LITTLE, lang);
+  shortcuts.append_uint (4, BFD_ENDIAN_LITTLE, dw_lang);
   shortcuts.append_offset (main_name_offset);
 }
 
