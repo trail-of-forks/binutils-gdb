@@ -783,7 +783,7 @@ set_main_name_from_gdb_index (dwarf2_per_objfile *per_objfile,
                               mapped_gdb_index *index)
 {
   const auto expected_size = 4 + sizeof (offset_type);
-  if (index->shortcut_table.size () != expected_size)
+  if (index->shortcut_table.size () < expected_size)
     /* The data in the section is not present, is corrupted or is in a version
      * we don't know about. Regardless, we can't make use of it. */
     return;
