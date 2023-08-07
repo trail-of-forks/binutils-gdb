@@ -38,15 +38,17 @@ copy_string (struct objfile *objfile, const char *py_str)
 /* Creates a new type and returns a new gdb.Type associated with it. */
 
 PyObject *
-gdbpy_init_type (PyObject *self, PyObject *args)
+gdbpy_init_type (PyObject *self, PyObject *args, PyObject *kw)
 {
+  static const char *keywords[] = { "owner", "type_code", "bit_size", "name",
+				    NULL };
   PyObject *objfile_object;
   enum type_code code;
   int bit_length;
   const char *py_name;
 
-  if(!PyArg_ParseTuple (args, "Oiis", &objfile_object, &code,
-			&bit_length, &py_name))
+  if(!PyArg_ParseTupleAndKeywords (args, kw, "Oiis", keywords, &objfile_object,
+				   &code, &bit_length, &py_name))
     return nullptr;
 
   struct objfile* objfile = objfile_object_to_objfile (objfile_object);
@@ -72,15 +74,18 @@ gdbpy_init_type (PyObject *self, PyObject *args)
 /* Creates a new integer type and returns a new gdb.Type associated with it. */
 
 PyObject *
-gdbpy_init_integer_type (PyObject *self, PyObject *args)
+gdbpy_init_integer_type (PyObject *self, PyObject *args, PyObject *kw)
 {
+  static const char *keywords[] = { "owner", "bit_size", "unsigned", "name",
+				    NULL };
   PyObject *objfile_object;
   int bit_size;
   int unsigned_p;
   const char *py_name;
 
-  if (!PyArg_ParseTuple (args, "Oips", &objfile_object, &bit_size,
-			 &unsigned_p, &py_name))
+  if (!PyArg_ParseTupleAndKeywords (args, kw, "Oips", keywords,
+				    &objfile_object, &bit_size, &unsigned_p,
+				    &py_name))
     return nullptr;
 
   struct objfile *objfile = objfile_object_to_objfile (objfile_object);
@@ -107,16 +112,18 @@ gdbpy_init_integer_type (PyObject *self, PyObject *args)
  * with it. */
 
 PyObject *
-gdbpy_init_character_type (PyObject *self, PyObject *args)
+gdbpy_init_character_type (PyObject *self, PyObject *args, PyObject *kw)
 {
-
+  static const char *keywords[] = { "owner", "bit_size", "unsigned", "name",
+				    NULL };
   PyObject *objfile_object;
   int bit_size;
   int unsigned_p;
   const char *py_name;
 
-  if (!PyArg_ParseTuple (args, "Oips", &objfile_object, &bit_size,
-			 &unsigned_p, &py_name))
+  if (!PyArg_ParseTupleAndKeywords (args, kw, "Oips", keywords,
+				    &objfile_object, &bit_size, &unsigned_p,
+				    &py_name))
     return nullptr;
 
   struct objfile *objfile = objfile_object_to_objfile (objfile_object);
@@ -142,16 +149,18 @@ gdbpy_init_character_type (PyObject *self, PyObject *args)
 /* Creates a new boolean type and returns a new gdb.Type associated with it. */
 
 PyObject *
-gdbpy_init_boolean_type (PyObject *self, PyObject *args)
+gdbpy_init_boolean_type (PyObject *self, PyObject *args, PyObject *kw)
 {
-
+  static const char *keywords[] = { "owner", "bit_size", "unsigned", "name",
+				    NULL };
   PyObject *objfile_object;
   int bit_size;
   int unsigned_p;
   const char *py_name;
 
-  if (!PyArg_ParseTuple (args, "Oips", &objfile_object, &bit_size,
-			 &unsigned_p, &py_name))
+  if (!PyArg_ParseTupleAndKeywords (args, kw, "Oips", keywords,
+				    &objfile_object, &bit_size, &unsigned_p,
+				    &py_name))
     return nullptr;
 
   struct objfile *objfile = objfile_object_to_objfile (objfile_object);
@@ -177,13 +186,14 @@ gdbpy_init_boolean_type (PyObject *self, PyObject *args)
 /* Creates a new float type and returns a new gdb.Type associated with it. */
 
 PyObject *
-gdbpy_init_float_type (PyObject *self, PyObject *args)
+gdbpy_init_float_type (PyObject *self, PyObject *args, PyObject *kw)
 {
+  static const char *keywords[] = { "owner", "format", "name", NULL };
   PyObject *objfile_object, *float_format_object;
   const char *py_name;
 
-  if (!PyArg_ParseTuple (args, "OOs", &objfile_object,
-			 &float_format_object, &py_name))
+  if (!PyArg_ParseTupleAndKeywords (args, kw, "OOs", keywords, &objfile_object,
+				    &float_format_object, &py_name))
     return nullptr;
 
   struct objfile *objfile = objfile_object_to_objfile (objfile_object);
@@ -195,10 +205,10 @@ gdbpy_init_float_type (PyObject *self, PyObject *args)
   if (local_ff == nullptr)
     return nullptr;
 
-  /* Persist a copy of the format in the objfile's obstack. This guarantees that
-   * the format won't outlive the type being created from it and that changes
-   * made to the object used to create this type will not affect it after
-   * creation. */
+  /* Persist a copy of the format in the objfile's obstack. This guarantees
+   * that the format won't outlive the type being created from it and that
+   * changes made to the object used to create this type will not affect it
+   * after creation. */
   auto ff = OBSTACK_CALLOC
     (&objfile->objfile_obstack,
      1,
@@ -206,7 +216,8 @@ gdbpy_init_float_type (PyObject *self, PyObject *args)
   memcpy (ff, local_ff, sizeof (struct floatformat));
 
   /* We only support creating float types in the architecture's endianness, so
-   * make sure init_float_type sees the float format structure we need it to. */
+   * make sure init_float_type sees the float format structure we need it to.
+   */
   enum bfd_endian endianness = gdbarch_byte_order (objfile->arch());
   gdb_assert (endianness < BFD_ENDIAN_UNKNOWN);
 
@@ -235,11 +246,13 @@ gdbpy_init_float_type (PyObject *self, PyObject *args)
 PyObject *
 gdbpy_init_decfloat_type (PyObject *self, PyObject *args)
 {
+  static const char *keywords[] = { "owner", "bit_size", "name", NULL };
   PyObject *objfile_object;
   int bit_length;
   const char *py_name;
 
-  if (!PyArg_ParseTuple (args, "Ois", &objfile_object, &bit_length, &py_name))
+  if (!PyArg_ParseTupleAndKeywords (args, kw, "Ois", keywords, &objfile_object,
+				    &bit_length, &py_name))
     return nullptr;
 
   struct objfile *objfile = objfile_object_to_objfile (objfile_object);
@@ -265,12 +278,12 @@ gdbpy_init_decfloat_type (PyObject *self, PyObject *args)
 /* Returns whether a given type can be used to create a complex type. */
 
 PyObject *
-gdbpy_can_create_complex_type (PyObject *self, PyObject *args)
+gdbpy_can_create_complex_type (PyObject *self, PyObject *args, PyObject *kw)
 {
-
+  static const char *keywords[] = { "type", NULL };
   PyObject *type_object;
 
-  if (!PyArg_ParseTuple (args, "O", &type_object))
+  if (!PyArg_ParseTupleAndKeywords (args, kw, "O", keywords, &type_object))
     return nullptr;
 
   struct type *type = type_object_to_type (type_object);
@@ -296,13 +309,14 @@ gdbpy_can_create_complex_type (PyObject *self, PyObject *args)
 /* Creates a new complex type and returns a new gdb.Type associated with it. */
 
 PyObject *
-gdbpy_init_complex_type (PyObject *self, PyObject *args)
+gdbpy_init_complex_type (PyObject *self, PyObject *args, PyObject *kw)
 {
-
+  static const char *keywords[] = { "type", "name", NULL };
   PyObject *type_object;
   const char *py_name;
 
-  if (!PyArg_ParseTuple (args, "Os", &type_object, &py_name))
+  if (!PyArg_ParseTupleAndKeywords (args, kw, "Os", keywords, &type_object,
+				    &py_name))
     return nullptr;
 
   struct type *type = type_object_to_type (type_object);
@@ -336,14 +350,17 @@ gdbpy_init_complex_type (PyObject *self, PyObject *args)
 /* Creates a new pointer type and returns a new gdb.Type associated with it. */
 
 PyObject *
-gdbpy_init_pointer_type (PyObject *self, PyObject *args)
+gdbpy_init_pointer_type (PyObject *self, PyObject *args, PyObject *kw)
 {
+  static const char *keywords[] = { "owner", "target", "bit_size", "name",
+				    NULL };
   PyObject *objfile_object, *type_object;
   int bit_length;
   const char *py_name;
 
-  if (!PyArg_ParseTuple (args, "OOis", &objfile_object, &type_object,
-			 &bit_length, &py_name))
+  if (!PyArg_ParseTupleAndKeywords (args, kw, "OOis", keywords,
+				    &objfile_object, &type_object,
+				    &bit_length, &py_name))
     return nullptr;
 
   struct objfile *objfile = objfile_object_to_objfile (objfile_object);
@@ -359,8 +376,7 @@ gdbpy_init_pointer_type (PyObject *self, PyObject *args)
   try
     {
       type_allocator allocator (objfile);
-      pointer_type = init_pointer_type (allocator, bit_length,
-					name, type);
+      pointer_type = init_pointer_type (allocator, bit_length, name, type);
       gdb_assert (type != nullptr);
     }
   catch (gdb_exception_error& ex)
@@ -377,14 +393,16 @@ gdbpy_init_pointer_type (PyObject *self, PyObject *args)
 PyObject *
 gdbpy_init_fixed_point_type (PyObject *self, PyObject *args)
 {
-
+  static const char *keywords[] = { "owner", "bit_size", "unsigned", "name",
+				    NULL };
   PyObject *objfile_object;
   int bit_length;
   int unsigned_p;
   const char* py_name;
 
-  if (!PyArg_ParseTuple (args, "Oips", &objfile_object, &bit_length,
-			 &unsigned_p, &py_name))
+  if (!PyArg_ParseTupleAndKeywords (args, kw, "Oips", keywords,
+				    &objfile_object, &bit_length,
+				    &unsigned_p, &py_name))
     return nullptr;
 
   struct objfile *objfile = objfile_object_to_objfile (objfile_object);
@@ -395,8 +413,7 @@ gdbpy_init_fixed_point_type (PyObject *self, PyObject *args)
   struct type *type;
   try
     {
-      type = init_fixed_point_type (objfile, bit_length, unsigned_p,
-				    name);
+      type = init_fixed_point_type (objfile, bit_length, unsigned_p, name);
       gdb_assert (type != nullptr);
     }
   catch (gdb_exception_error& ex)

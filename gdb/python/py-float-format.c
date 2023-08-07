@@ -52,25 +52,31 @@ gdbpy_initialize_float_format (void)
 
 GDBPY_INITIALIZE_FILE (gdbpy_initialize_float_format);
 
-#define INSTANCE_FIELD_GETTER(getter_name, field_name, field_type, field_conv) \
-  static PyObject *							       \
-  getter_name (PyObject *self, void *closure)				       \
-  {									       \
-    float_format_object *ff = (float_format_object*) self;		       \
-    field_type value = ff->float_format ()->field_name;			       \
-    return field_conv (value);						       \
+/* Creates a function that gets the value of a field of a given name from the
+ * underliying float_format structure in the Python object. */
+
+#define INSTANCE_FIELD_GETTER(getter_name, field_name, field_type, field_conv)\
+  static PyObject *							      \
+  getter_name (PyObject *self, void *closure)				      \
+  {									      \
+    float_format_object *ff = (float_format_object*) self;		      \
+    field_type value = ff->float_format ()->field_name;			      \
+    return field_conv (value);						      \
   }
 
-#define INSTANCE_FIELD_SETTER(setter_name, field_name, field_type, field_conv) \
-  static int								       \
-  setter_name (PyObject *self, PyObject* value, void *closure)		       \
-  {									       \
-    field_type native_value;						       \
-    if (!field_conv (value, &native_value))				       \
-      return -1;							       \
-    float_format_object *ff = (float_format_object*) self;		       \
-    ff->float_format ()->field_name = native_value;			       \
-    return 0;								       \
+/* Creates a function that sets the value of a field of a given name from the
+ * underliying float_format structure in the Python object. */
+
+#define INSTANCE_FIELD_SETTER(setter_name, field_name, field_type, field_conv)\
+  static int								      \
+  setter_name (PyObject *self, PyObject* value, void *closure)		      \
+  {									      \
+    field_type native_value;						      \
+    if (!field_conv (value, &native_value))				      \
+      return -1;							      \
+    float_format_object *ff = (float_format_object*) self;		      \
+    ff->float_format ()->field_name = native_value;			      \
+    return 0;								      \
   }
 
 /* Converts from the intbit enum to a Python boolean. */
@@ -78,9 +84,8 @@ GDBPY_INITIALIZE_FILE (gdbpy_initialize_float_format);
 static PyObject *
 intbit_to_py (enum floatformat_intbit intbit)
 {
-  gdb_assert
-    (intbit == floatformat_intbit_yes ||
-     intbit == floatformat_intbit_no);
+  gdb_assert (intbit == floatformat_intbit_yes
+	      || intbit == floatformat_intbit_no);
 
   if (intbit == floatformat_intbit_no)
     Py_RETURN_FALSE;
@@ -99,8 +104,9 @@ py_to_intbit (PyObject *object, enum floatformat_intbit *intbit)
       return false;
     }
 
-  *intbit = PyObject_IsTrue (object) ?
-    floatformat_intbit_yes : floatformat_intbit_no;
+  *intbit = PyObject_IsTrue (object) ? floatformat_intbit_yes
+    : floatformat_intbit_no;
+
   return true;
 }
 
@@ -153,6 +159,10 @@ py_to_int(PyObject *object, int *val)
   *val = (int)native_val;
   return true;
 }
+
+/* Instantiate functions for all of the float format fields we'd like to be
+ * able to read and change from our Python object. These will be used later to
+ * define `getset` entries for them. */
 
 INSTANCE_FIELD_GETTER (ffpy_get_totalsize, totalsize,
 		       unsigned int, PyLong_FromLong)
@@ -215,13 +225,16 @@ ffpy_init (PyObject *self,
   return 0;
 }
 
-/* Retrieves a pointer to the underlying float format structure. */
+/* See python/python-internal.h. */
 
 struct floatformat *
 float_format_object_as_float_format (PyObject *self)
 {
-  if (!PyObject_IsInstance (self, (PyObject*) &float_format_object_type))
-    return nullptr;
+  if (!PyObject_TypeCheck (self, (PyObject*) &float_format_object_type))
+    {
+      PyErr_SetString(PyExc_TypeError, "expected gdb.FloatFormat");
+      return nullptr;
+    }
   return ((float_format_object*) self)->float_format ();
 }
 
@@ -250,33 +263,6 @@ static gdb_PyGetSetDef float_format_object_getset[] =
   { nullptr }
 };
 
-static PyMethodDef float_format_object_methods[] =
-{
-  { NULL }
-};
-
-static PyNumberMethods float_format_object_as_number = {
-  nullptr,	     /* nb_add */
-  nullptr,	     /* nb_subtract */
-  nullptr,	     /* nb_multiply */
-  nullptr,	     /* nb_remainder */
-  nullptr,	     /* nb_divmod */
-  nullptr,	     /* nb_power */
-  nullptr,	     /* nb_negative */
-  nullptr,	     /* nb_positive */
-  nullptr,	     /* nb_absolute */
-  nullptr,	     /* nb_nonzero */
-  nullptr,	     /* nb_invert */
-  nullptr,	     /* nb_lshift */
-  nullptr,	     /* nb_rshift */
-  nullptr,	     /* nb_and */
-  nullptr,	     /* nb_xor */
-  nullptr,	     /* nb_or */
-  nullptr,	     /* nb_int */
-  nullptr,	     /* reserved */
-  nullptr,	     /* nb_float */
-};
-
 PyTypeObject float_format_object_type =
 {
   PyVarObject_HEAD_INIT (NULL, 0)
@@ -289,7 +275,7 @@ PyTypeObject float_format_object_type =
   nullptr,			  /*tp_setattr*/
   nullptr,			  /*tp_compare*/
   nullptr,			  /*tp_repr*/
-  &float_format_object_as_number, /*tp_as_number*/
+  nullptr,			  /*tp_as_number*/
   nullptr,			  /*tp_as_sequence*/
   nullptr,			  /*tp_as_mapping*/
   nullptr,			  /*tp_hash */
@@ -306,7 +292,7 @@ PyTypeObject float_format_object_type =
   0,				  /* tp_weaklistoffset */
   nullptr,			  /* tp_iter */
   nullptr,			  /* tp_iternext */
-  float_format_object_methods,    /* tp_methods */
+  nullptr,			  /* tp_methods */
   nullptr,			  /* tp_members */
   float_format_object_getset,     /* tp_getset */
   nullptr,			  /* tp_base */

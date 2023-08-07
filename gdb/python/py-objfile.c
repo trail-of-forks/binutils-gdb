@@ -704,11 +704,16 @@ objfile_to_objfile_object (struct objfile *objfile)
   return gdbpy_ref<>::new_reference (result);
 }
 
+/* See python/python-internal.h. */
+
 struct objfile *
 objfile_object_to_objfile (PyObject *self)
 {
   if (!PyObject_TypeCheck (self, &objfile_object_type))
-    return nullptr;
+    {
+      PyErr_SetString(PyExc_TypeError, "expected gdb.Objfile");
+      return nullptr;
+    }
 
   auto objfile_object = (struct objfile_object*) self;
   OBJFPY_REQUIRE_VALID (objfile_object);
