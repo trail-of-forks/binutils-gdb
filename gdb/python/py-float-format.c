@@ -34,7 +34,8 @@ struct float_format_object
   }
 };
 
-/* Initializes the float format type and registers it with the Python interpreter. */
+/* Initializes the float format type and registers it with the Python
+ * interpreter. */
 
 static int CPYCHECKER_NEGATIVE_RESULT_SETS_EXCEPTION
 gdbpy_initialize_float_format (void)
@@ -43,7 +44,7 @@ gdbpy_initialize_float_format (void)
     return -1;
 
   if (gdb_pymodule_addobject (gdb_module, "FloatFormat",
-                              (PyObject *) &float_format_object_type) < 0)
+			      (PyObject *) &float_format_object_type) < 0)
     return -1;
 
   return 0;
@@ -52,24 +53,24 @@ gdbpy_initialize_float_format (void)
 GDBPY_INITIALIZE_FILE (gdbpy_initialize_float_format);
 
 #define INSTANCE_FIELD_GETTER(getter_name, field_name, field_type, field_conv) \
-  static PyObject *                                                            \
-  getter_name (PyObject *self, void *closure)                                  \
-  {                                                                            \
-    float_format_object *ff = (float_format_object*) self;                     \
-    field_type value = ff->float_format ()->field_name;                        \
-    return field_conv (value);                                                 \
+  static PyObject *							       \
+  getter_name (PyObject *self, void *closure)				       \
+  {									       \
+    float_format_object *ff = (float_format_object*) self;		       \
+    field_type value = ff->float_format ()->field_name;			       \
+    return field_conv (value);						       \
   }
 
-#define INSTANCE_FIELD_SETTER(getter_name, field_name, field_type, field_conv) \
-  static int                                                                   \
-  getter_name (PyObject *self, PyObject* value, void *closure)                 \
-  {                                                                            \
-    field_type native_value;                                                   \
-    if (!field_conv (value, &native_value))                                    \
-      return -1;                                                               \
-    float_format_object *ff = (float_format_object*) self;                     \
-    ff->float_format ()->field_name = native_value;                            \
-    return 0;                                                                  \
+#define INSTANCE_FIELD_SETTER(setter_name, field_name, field_type, field_conv) \
+  static int								       \
+  setter_name (PyObject *self, PyObject* value, void *closure)		       \
+  {									       \
+    field_type native_value;						       \
+    if (!field_conv (value, &native_value))				       \
+      return -1;							       \
+    float_format_object *ff = (float_format_object*) self;		       \
+    ff->float_format ()->field_name = native_value;			       \
+    return 0;								       \
   }
 
 /* Converts from the intbit enum to a Python boolean. */
@@ -77,8 +78,8 @@ GDBPY_INITIALIZE_FILE (gdbpy_initialize_float_format);
 static PyObject *
 intbit_to_py (enum floatformat_intbit intbit)
 {
-  gdb_assert 
-    (intbit == floatformat_intbit_yes || 
+  gdb_assert
+    (intbit == floatformat_intbit_yes ||
      intbit == floatformat_intbit_no);
 
   if (intbit == floatformat_intbit_no)
@@ -98,7 +99,7 @@ py_to_intbit (PyObject *object, enum floatformat_intbit *intbit)
       return false;
     }
 
-  *intbit = PyObject_IsTrue (object) ? 
+  *intbit = PyObject_IsTrue (object) ?
     floatformat_intbit_yes : floatformat_intbit_no;
   return true;
 }
@@ -122,8 +123,8 @@ py_to_unsigned_int (PyObject *object, unsigned int *val)
     }
   if (native_val < 0)
     {
-      PyErr_SetString (PyExc_ValueError, 
-                       "value must not be smaller than zero");
+      PyErr_SetString (PyExc_ValueError,
+		       "value must not be smaller than zero");
       return false;
     }
 
@@ -153,49 +154,49 @@ py_to_int(PyObject *object, int *val)
   return true;
 }
 
-INSTANCE_FIELD_GETTER (ffpy_get_totalsize, totalsize, 
-                       unsigned int, PyLong_FromLong)
-INSTANCE_FIELD_GETTER (ffpy_get_sign_start, sign_start, 
-                       unsigned int, PyLong_FromLong)
-INSTANCE_FIELD_GETTER (ffpy_get_exp_start, exp_start, 
-                       unsigned int, PyLong_FromLong)
-INSTANCE_FIELD_GETTER (ffpy_get_exp_len, exp_len, 
-                       unsigned int, PyLong_FromLong)
+INSTANCE_FIELD_GETTER (ffpy_get_totalsize, totalsize,
+		       unsigned int, PyLong_FromLong)
+INSTANCE_FIELD_GETTER (ffpy_get_sign_start, sign_start,
+		       unsigned int, PyLong_FromLong)
+INSTANCE_FIELD_GETTER (ffpy_get_exp_start, exp_start,
+		       unsigned int, PyLong_FromLong)
+INSTANCE_FIELD_GETTER (ffpy_get_exp_len, exp_len,
+		       unsigned int, PyLong_FromLong)
 INSTANCE_FIELD_GETTER (ffpy_get_exp_bias, exp_bias, int, PyLong_FromLong)
-INSTANCE_FIELD_GETTER (ffpy_get_exp_nan, exp_nan, 
-                       unsigned int, PyLong_FromLong)
-INSTANCE_FIELD_GETTER (ffpy_get_man_start, man_start, 
-                       unsigned int, PyLong_FromLong)
-INSTANCE_FIELD_GETTER (ffpy_get_man_len, man_len, 
-                       unsigned int, PyLong_FromLong)
-INSTANCE_FIELD_GETTER (ffpy_get_intbit, intbit, 
-                       enum floatformat_intbit, intbit_to_py)
-INSTANCE_FIELD_GETTER (ffpy_get_name, name, 
-                       const char *, PyUnicode_FromString)
+INSTANCE_FIELD_GETTER (ffpy_get_exp_nan, exp_nan,
+		       unsigned int, PyLong_FromLong)
+INSTANCE_FIELD_GETTER (ffpy_get_man_start, man_start,
+		       unsigned int, PyLong_FromLong)
+INSTANCE_FIELD_GETTER (ffpy_get_man_len, man_len,
+		       unsigned int, PyLong_FromLong)
+INSTANCE_FIELD_GETTER (ffpy_get_intbit, intbit,
+		       enum floatformat_intbit, intbit_to_py)
+INSTANCE_FIELD_GETTER (ffpy_get_name, name,
+		       const char *, PyUnicode_FromString)
 
-INSTANCE_FIELD_SETTER (ffpy_set_totalsize, totalsize, 
-                       unsigned int, py_to_unsigned_int)
-INSTANCE_FIELD_SETTER (ffpy_set_sign_start, sign_start, 
-                       unsigned int, py_to_unsigned_int)
-INSTANCE_FIELD_SETTER (ffpy_set_exp_start, exp_start, 
-                       unsigned int, py_to_unsigned_int)
-INSTANCE_FIELD_SETTER (ffpy_set_exp_len, exp_len, 
-                       unsigned int, py_to_unsigned_int)
+INSTANCE_FIELD_SETTER (ffpy_set_totalsize, totalsize,
+		       unsigned int, py_to_unsigned_int)
+INSTANCE_FIELD_SETTER (ffpy_set_sign_start, sign_start,
+		       unsigned int, py_to_unsigned_int)
+INSTANCE_FIELD_SETTER (ffpy_set_exp_start, exp_start,
+		       unsigned int, py_to_unsigned_int)
+INSTANCE_FIELD_SETTER (ffpy_set_exp_len, exp_len,
+		       unsigned int, py_to_unsigned_int)
 INSTANCE_FIELD_SETTER (ffpy_set_exp_bias, exp_bias, int, py_to_int)
-INSTANCE_FIELD_SETTER (ffpy_set_exp_nan, exp_nan, 
-                       unsigned int, py_to_unsigned_int)
+INSTANCE_FIELD_SETTER (ffpy_set_exp_nan, exp_nan,
+		       unsigned int, py_to_unsigned_int)
 INSTANCE_FIELD_SETTER (ffpy_set_man_start, man_start,
-                       unsigned int, py_to_unsigned_int)
-INSTANCE_FIELD_SETTER (ffpy_set_man_len, man_len, 
-                       unsigned int, py_to_unsigned_int)
-INSTANCE_FIELD_SETTER (ffpy_set_intbit, intbit, 
-                       enum floatformat_intbit, py_to_intbit)
+		       unsigned int, py_to_unsigned_int)
+INSTANCE_FIELD_SETTER (ffpy_set_man_len, man_len,
+		       unsigned int, py_to_unsigned_int)
+INSTANCE_FIELD_SETTER (ffpy_set_intbit, intbit,
+		       enum floatformat_intbit, py_to_intbit)
 
 /* Makes sure float formats created from Python always test as valid. */
 
 static int
 ffpy_always_valid (const struct floatformat *fmt ATTRIBUTE_UNUSED,
-                   const void *from ATTRIBUTE_UNUSED)
+		   const void *from ATTRIBUTE_UNUSED)
 {
   return 1;
 }
@@ -204,8 +205,8 @@ ffpy_always_valid (const struct floatformat *fmt ATTRIBUTE_UNUSED,
 
 static int
 ffpy_init (PyObject *self,
-           PyObject *args ATTRIBUTE_UNUSED,
-           PyObject *kwds ATTRIBUTE_UNUSED)
+	   PyObject *args ATTRIBUTE_UNUSED,
+	   PyObject *kwds ATTRIBUTE_UNUSED)
 {
   auto ff = (float_format_object*) self;
   ff->format = floatformat ();
@@ -255,67 +256,67 @@ static PyMethodDef float_format_object_methods[] =
 };
 
 static PyNumberMethods float_format_object_as_number = {
-  nullptr,             /* nb_add */
-  nullptr,             /* nb_subtract */
-  nullptr,             /* nb_multiply */
-  nullptr,             /* nb_remainder */
-  nullptr,             /* nb_divmod */
-  nullptr,             /* nb_power */
-  nullptr,             /* nb_negative */
-  nullptr,             /* nb_positive */
-  nullptr,             /* nb_absolute */
-  nullptr,             /* nb_nonzero */
-  nullptr,             /* nb_invert */
-  nullptr,             /* nb_lshift */
-  nullptr,             /* nb_rshift */
-  nullptr,             /* nb_and */
-  nullptr,             /* nb_xor */
-  nullptr,             /* nb_or */
-  nullptr,             /* nb_int */
-  nullptr,             /* reserved */
-  nullptr,             /* nb_float */
+  nullptr,	     /* nb_add */
+  nullptr,	     /* nb_subtract */
+  nullptr,	     /* nb_multiply */
+  nullptr,	     /* nb_remainder */
+  nullptr,	     /* nb_divmod */
+  nullptr,	     /* nb_power */
+  nullptr,	     /* nb_negative */
+  nullptr,	     /* nb_positive */
+  nullptr,	     /* nb_absolute */
+  nullptr,	     /* nb_nonzero */
+  nullptr,	     /* nb_invert */
+  nullptr,	     /* nb_lshift */
+  nullptr,	     /* nb_rshift */
+  nullptr,	     /* nb_and */
+  nullptr,	     /* nb_xor */
+  nullptr,	     /* nb_or */
+  nullptr,	     /* nb_int */
+  nullptr,	     /* reserved */
+  nullptr,	     /* nb_float */
 };
 
 PyTypeObject float_format_object_type =
 {
   PyVarObject_HEAD_INIT (NULL, 0)
-  "gdb.FloatFormat",              /*tp_name*/
+  "gdb.FloatFormat",		  /*tp_name*/
   sizeof (float_format_object),   /*tp_basicsize*/
-  0,                              /*tp_itemsize*/
-  nullptr,                        /*tp_dealloc*/
-  0,                              /*tp_print*/
-  nullptr,                        /*tp_getattr*/
-  nullptr,                        /*tp_setattr*/
-  nullptr,                        /*tp_compare*/
-  nullptr,                        /*tp_repr*/
+  0,				  /*tp_itemsize*/
+  nullptr,			  /*tp_dealloc*/
+  0,				  /*tp_print*/
+  nullptr,			  /*tp_getattr*/
+  nullptr,			  /*tp_setattr*/
+  nullptr,			  /*tp_compare*/
+  nullptr,			  /*tp_repr*/
   &float_format_object_as_number, /*tp_as_number*/
-  nullptr,                        /*tp_as_sequence*/
-  nullptr,                        /*tp_as_mapping*/
-  nullptr,                        /*tp_hash */
-  nullptr,                        /*tp_call*/
-  nullptr,                        /*tp_str*/
-  nullptr,                        /*tp_getattro*/
-  nullptr,                        /*tp_setattro*/
-  nullptr,                        /*tp_as_buffer*/
-  Py_TPFLAGS_DEFAULT,             /*tp_flags*/
+  nullptr,			  /*tp_as_sequence*/
+  nullptr,			  /*tp_as_mapping*/
+  nullptr,			  /*tp_hash */
+  nullptr,			  /*tp_call*/
+  nullptr,			  /*tp_str*/
+  nullptr,			  /*tp_getattro*/
+  nullptr,			  /*tp_setattro*/
+  nullptr,			  /*tp_as_buffer*/
+  Py_TPFLAGS_DEFAULT,		  /*tp_flags*/
   "GDB float format object",      /* tp_doc */
-  nullptr,                        /* tp_traverse */
-  nullptr,                        /* tp_clear */
-  nullptr,                        /* tp_richcompare */
-  0,                              /* tp_weaklistoffset */
-  nullptr,                        /* tp_iter */
-  nullptr,                        /* tp_iternext */
+  nullptr,			  /* tp_traverse */
+  nullptr,			  /* tp_clear */
+  nullptr,			  /* tp_richcompare */
+  0,				  /* tp_weaklistoffset */
+  nullptr,			  /* tp_iter */
+  nullptr,			  /* tp_iternext */
   float_format_object_methods,    /* tp_methods */
-  nullptr,                        /* tp_members */
+  nullptr,			  /* tp_members */
   float_format_object_getset,     /* tp_getset */
-  nullptr,                        /* tp_base */
-  nullptr,                        /* tp_dict */
-  nullptr,                        /* tp_descr_get */
-  nullptr,                        /* tp_descr_set */
-  0,                              /* tp_dictoffset */
-  ffpy_init,                      /* tp_init */
-  nullptr,                        /* tp_alloc */
-  PyType_GenericNew,              /* tp_new */
+  nullptr,			  /* tp_base */
+  nullptr,			  /* tp_dict */
+  nullptr,			  /* tp_descr_get */
+  nullptr,			  /* tp_descr_set */
+  0,				  /* tp_dictoffset */
+  ffpy_init,			  /* tp_init */
+  nullptr,			  /* tp_alloc */
+  PyType_GenericNew,		  /* tp_new */
 };
 
 

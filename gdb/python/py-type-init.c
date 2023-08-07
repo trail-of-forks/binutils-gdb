@@ -32,7 +32,7 @@ copy_string (struct objfile *objfile, const char *py_str)
 {
   unsigned int len = strlen (py_str);
   return obstack_strndup (&objfile->per_bfd->storage_obstack,
-                          py_str, len);
+			  py_str, len);
 }
 
 /* Creates a new type and returns a new gdb.Type associated with it. */
@@ -45,8 +45,8 @@ gdbpy_init_type (PyObject *self, PyObject *args)
   int bit_length;
   const char *py_name;
 
-  if(!PyArg_ParseTuple (args, "Oiis", &objfile_object, &code, 
-                        &bit_length, &py_name))
+  if(!PyArg_ParseTuple (args, "Oiis", &objfile_object, &code,
+			&bit_length, &py_name))
     return nullptr;
 
   struct objfile* objfile = objfile_object_to_objfile (objfile_object);
@@ -79,8 +79,8 @@ gdbpy_init_integer_type (PyObject *self, PyObject *args)
   int unsigned_p;
   const char *py_name;
 
-  if (!PyArg_ParseTuple (args, "Oips", &objfile_object, &bit_size, 
-                         &unsigned_p, &py_name))
+  if (!PyArg_ParseTuple (args, "Oips", &objfile_object, &bit_size,
+			 &unsigned_p, &py_name))
     return nullptr;
 
   struct objfile *objfile = objfile_object_to_objfile (objfile_object);
@@ -103,7 +103,7 @@ gdbpy_init_integer_type (PyObject *self, PyObject *args)
   return type_to_type_object(type);
 }
 
-/* Creates a new character type and returns a new gdb.Type associated 
+/* Creates a new character type and returns a new gdb.Type associated
  * with it. */
 
 PyObject *
@@ -115,8 +115,8 @@ gdbpy_init_character_type (PyObject *self, PyObject *args)
   int unsigned_p;
   const char *py_name;
 
-  if (!PyArg_ParseTuple (args, "Oips", &objfile_object, &bit_size, 
-                         &unsigned_p, &py_name))
+  if (!PyArg_ParseTuple (args, "Oips", &objfile_object, &bit_size,
+			 &unsigned_p, &py_name))
     return nullptr;
 
   struct objfile *objfile = objfile_object_to_objfile (objfile_object);
@@ -150,8 +150,8 @@ gdbpy_init_boolean_type (PyObject *self, PyObject *args)
   int unsigned_p;
   const char *py_name;
 
-  if (!PyArg_ParseTuple (args, "Oips", &objfile_object, &bit_size, 
-                         &unsigned_p, &py_name))
+  if (!PyArg_ParseTuple (args, "Oips", &objfile_object, &bit_size,
+			 &unsigned_p, &py_name))
     return nullptr;
 
   struct objfile *objfile = objfile_object_to_objfile (objfile_object);
@@ -182,15 +182,15 @@ gdbpy_init_float_type (PyObject *self, PyObject *args)
   PyObject *objfile_object, *float_format_object;
   const char *py_name;
 
-  if (!PyArg_ParseTuple (args, "OOs", &objfile_object, 
-                         &float_format_object, &py_name))
+  if (!PyArg_ParseTuple (args, "OOs", &objfile_object,
+			 &float_format_object, &py_name))
     return nullptr;
 
   struct objfile *objfile = objfile_object_to_objfile (objfile_object);
   if (objfile == nullptr)
     return nullptr;
 
-  struct floatformat *local_ff = float_format_object_as_float_format 
+  struct floatformat *local_ff = float_format_object_as_float_format
     (float_format_object);
   if (local_ff == nullptr)
     return nullptr;
@@ -229,7 +229,7 @@ gdbpy_init_float_type (PyObject *self, PyObject *args)
   return type_to_type_object (type);
 }
 
-/* Creates a new decimal float type and returns a new gdb.Type 
+/* Creates a new decimal float type and returns a new gdb.Type
  * associated with it. */
 
 PyObject *
@@ -317,8 +317,8 @@ gdbpy_init_complex_type (PyObject *self, PyObject *args)
 
   unsigned int len = strlen (py_name);
   const char *name = obstack_strndup (obstack,
-                                      py_name,
-                                      len);
+				      py_name,
+				      len);
   struct type *complex_type;
   try
     {
@@ -342,8 +342,8 @@ gdbpy_init_pointer_type (PyObject *self, PyObject *args)
   int bit_length;
   const char *py_name;
 
-  if (!PyArg_ParseTuple (args, "OOis", &objfile_object, &type_object, 
-                         &bit_length, &py_name))
+  if (!PyArg_ParseTuple (args, "OOis", &objfile_object, &type_object,
+			 &bit_length, &py_name))
     return nullptr;
 
   struct objfile *objfile = objfile_object_to_objfile (objfile_object);
@@ -359,8 +359,8 @@ gdbpy_init_pointer_type (PyObject *self, PyObject *args)
   try
     {
       type_allocator allocator (objfile);
-      pointer_type = init_pointer_type (allocator, bit_length, 
-                                        name, type);
+      pointer_type = init_pointer_type (allocator, bit_length,
+					name, type);
       gdb_assert (type != nullptr);
     }
   catch (gdb_exception_error& ex)
@@ -371,7 +371,7 @@ gdbpy_init_pointer_type (PyObject *self, PyObject *args)
   return type_to_type_object (pointer_type);
 }
 
-/* Creates a new fixed point type and returns a new gdb.Type associated 
+/* Creates a new fixed point type and returns a new gdb.Type associated
  * with it. */
 
 PyObject *
@@ -383,8 +383,8 @@ gdbpy_init_fixed_point_type (PyObject *self, PyObject *args)
   int unsigned_p;
   const char* py_name;
 
-  if (!PyArg_ParseTuple (args, "Oips", &objfile_object, &bit_length, 
-                         &unsigned_p, &py_name))
+  if (!PyArg_ParseTuple (args, "Oips", &objfile_object, &bit_length,
+			 &unsigned_p, &py_name))
     return nullptr;
 
   struct objfile *objfile = objfile_object_to_objfile (objfile_object);
@@ -395,8 +395,8 @@ gdbpy_init_fixed_point_type (PyObject *self, PyObject *args)
   struct type *type;
   try
     {
-      type = init_fixed_point_type (objfile, bit_length, unsigned_p, 
-                                    name);
+      type = init_fixed_point_type (objfile, bit_length, unsigned_p,
+				    name);
       gdb_assert (type != nullptr);
     }
   catch (gdb_exception_error& ex)
