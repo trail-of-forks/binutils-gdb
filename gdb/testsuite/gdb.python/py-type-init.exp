@@ -1,0 +1,133 @@
+# Copyright (C) 2009-2023 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# This file is part of the GDB testsuite.  It tests the mechanism
+# of creating new types from within Python.
+
+load_lib gdb-python.exp
+
+standard_testfile
+
+# Build inferior to language specification.
+proc build_inferior {exefile lang} {
+  global srcdir subdir srcfile testfile hex
+
+  if { [gdb_compile "${srcdir}/${subdir}/${srcfile}" "${exefile}" executable "debug $lang"] != "" } {
+      untested "failed to compile in $lang mode"
+      return -1
+  }
+
+  return 0
+}
+
+# Restart GDB.
+proc restart_gdb {exefile} {
+  clean_restart $exefile
+
+  if {![runto_main]} {
+      return
+  }
+}
+
+# Tests the basic values of a type.
+proc test_type_basic {owner t code sizeof name} {
+  gdb_test "python print(${t}.code == ${code})" \
+    "True" "check the code for the python-constructed type (${owner}/${name})"
+  gdb_test "python print(${t}.sizeof == ${sizeof})" \
+    "True" "check the size for the python-constructed type (${owner}/${name})"
+  gdb_test "python print(${t}.name == ${name})" \
+    "True" "check the name for the python-constructed type (${owner}/${name})"
+}
+
+# Runs the tests for a given owner object.
+proc for_owner {owner} {
+  # Simple direct type creation.
+  gdb_test "python t = gdb.init_type(${owner}, gdb.TYPE_CODE_INT, 24, 'long short int')" \
+    "" "construct a new type from inside python (${owner})"
+  test_type_basic $owner "t" "gdb.TYPE_CODE_INT" "3" "'long short int'"
+
+  # Integer type creation.
+  gdb_test "python t = gdb.init_integer_type(${owner}, 24, True, 'test_int_t')" \
+    "" "construct a new integer type from inside python (${owner})"
+  test_type_basic $owner "t" "gdb.TYPE_CODE_INT" "3" "'test_int_t'"
+
+  # Character type creation.
+  gdb_test "python t = gdb.init_character_type(${owner}, 24, True, 'test_char_t')" \
+    "" "construct a new character type from inside python (${owner})"
+  test_type_basic $owner "t" "gdb.TYPE_CODE_CHAR" "3" "'test_char_t'"
+
+  # Boolean type creation.
+  gdb_test "python t = gdb.init_boolean_type(${owner}, 24, True, 'test_bool_t')" \
+    "" "construct a new boolean type from inside python (${owner})"
+  test_type_basic $owner "t" "gdb.TYPE_CODE_BOOL" "3" "'test_bool_t'"
+
+  # Float type creation.
+  gdb_test "python f = gdb.FloatFormat()" "" "create a float format object (${owner})"
+  gdb_test "python f.totalsize = 32" "" "set totalsize for the float format (${owner})"
+  gdb_test "python f.sign_start = 31" "" "set sign_start for the float format (${owner})"
+  gdb_test "python f.exp_start = 23" "" "set exp_start for the float format (${owner})"
+  gdb_test "python f.exp_len = 8" "" "set exp_len for the float format (${owner})"
+  gdb_test "python f.exp_bias = 0" "" "set exp_bias for the float format (${owner})"
+  gdb_test "python f.exp_nan = 0xff" "" "set exp_nan for the float format (${owner})"
+  gdb_test "python f.man_start = 0" "" "set man_start for the float format (${owner})"
+  gdb_test "python f.man_len = 22" "" "set man_len for the float format (${owner})"
+  gdb_test "python f.intbit = False" "" "set intbit for the float format (${owner})"
+  gdb_test "python f.name = 'test_float_fmt'" "" "set name for the float format (${owner})"
+
+  gdb_test "python ft = gdb.init_float_type(${owner}, f, 'test_float_t')" \
+    "" "construct a new float type from inside python (${owner})"
+  test_type_basic $owner "ft" "gdb.TYPE_CODE_FLT" "4" "'test_float_t'"
+
+  # Decfloat type creation.
+  gdb_test "python t = gdb.init_decfloat_type(${owner}, 24, 'test_decfloat_t')" \
+    "" "construct a new decfloat type from inside python (${owner})"
+  test_type_basic $owner "t" "gdb.TYPE_CODE_DECFLOAT" "3" "'test_decfloat_t'"
+
+  # Test complex type.
+  gdb_test "python print(gdb.can_create_complex_type(ft))" "True" \
+    "check whether the float type we created can be the basis for a complex (${owner})"
+
+  gdb_test "python t = gdb.init_complex_type(ft, 'test_complex_t')" \
+    "" "construct a new complex type from inside python (${owner})"
+  test_type_basic $owner "t" "gdb.TYPE_CODE_COMPLEX" "8" "'test_complex_t'"
+
+  # Create a 24-bit pointer to our floating point type.
+  gdb_test "python t = gdb.init_pointer_type(${owner}, ft, 24, 'test_pointer_t')" \
+    "" "construct a new pointer type from inside python (${owner})"
+  test_type_basic $owner "t" "gdb.TYPE_CODE_PTR" "3" "'test_pointer_t'"
+}
+
+# Run the tests.
+if { [build_inferior "${binfile}" "c"] == 0 } {
+  restart_gdb "${binfile}"
+
+  # Skip all tests if Python scripting is not enabled.
+  if { ![allow_python_tests] } { continue }
+
+  # Test objfile-owned type construction
+  for_owner "gdb.objfiles()\[0\]"
+
+  # Objfile-owned fixed point type creation.
+  #
+  # Currently, these cannot be owned by architectures, so we have to
+  # test them separately.
+  gdb_test "python t = gdb.init_fixed_point_type(gdb.objfiles()\[0\], 24, True, 'test_fixed_t')" \
+    "" "construct a new fixed point type from inside python (gdb.objfile()\[0\])"
+  test_type_basic "gdb.objfile()\[0\]" "t" "gdb.TYPE_CODE_FIXED_POINT" "3" "'test_fixed_t'"
+
+  # Test arch-owned type construction
+  for_owner "gdb.inferiors()\[0\].architecture()"
+}
+
