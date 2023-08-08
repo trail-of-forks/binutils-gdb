@@ -1665,6 +1665,243 @@ A Fortran namelist.
 Further support for types is provided in the @code{gdb.types}
 Python module (@pxref{gdb.types}).
 
+
+
+@node Creating Types In Python
+@subsubsection Creating Types In Python
+@cindex creating types in Python
+@cindex Python, working with types
+
+@value{GDBN} makes available functionality to create new types from
+inside Python.
+
+The following type creation functions are available in the @code{gdb}
+module:
+
+@findex gdb.init_type
+@defun gdb.init_type (owner, type_code, bit_size, name)
+This function creates a new @code{gdb.Type} instance corresponding to a
+type owned by the given @code{owner}, with the given type code,
+@code{name} and size.
+
+@code{owner} must be a reference to either a @code{gdb.Objfile} or a
+@code{gdb.Architecture} object. These correspond to objfile and
+architecture-owned types, respectively.
+
+@code{type_code} is one of the @code{TYPE_CODE_} constants defined in
+@xref{Types In Python}.
+
+@code{bit_size} is the size of instances of the newly created type, in
+bits. Currently, accepted values are limited to multiples of 8.
+
+This function returns an instance of @code{gdb.Type}, and will throw an
+exception in case of an error.
+@end defun
+
+@findex gdb.init_integer_type
+@defun gdb.init_integer_type (owner, bit_size, unsigned, name)
+This function creates a new @code{gdb.Type} instance corresponding to an
+integer type owned by the given @code{owner}, with the given
+@code{name}, size and signedness.
+
+@code{owner} must be a reference to either a @code{gdb.Objfile} or a
+@code{gdb.Architecture} object. These correspond to objfile and
+architecture-owned types, respectively.
+
+@code{bit_size} is the size of instances of the newly created type, in
+bits. Currently, accepted values are limited to multiples of 8.
+
+@code{unsigned} is a boolean indicating whether the type corresponds to
+a signed or unsigned value.
+
+This function returns an instance of @code{gdb.Type}, and will throw an
+exception in case of an error.
+@end defun
+
+@findex gdb.init_character_type
+@defun gdb.init_character_type (owner, bit_size, unsigned, name)
+This function creates a new @code{gdb.Type} instance corresponding to a
+character type owned by the given @code{owner}, with the given
+@code{name}, size and signedness.
+
+@code{owner} must be a reference to either a @code{gdb.Objfile} or a
+@code{gdb.Architecture} object. These correspond to objfile and
+architecture-owned types, respectively.
+
+@code{bit_size} is the size of instances of the newly created type, in
+bits. Currently, accepted values are limited to multiples of 8.
+
+@code{unsigned} is a boolean indicating whether the type corresponds to
+a signed or unsigned value.
+
+This function returns an instance of @code{gdb.Type}, and will throw an
+exception in case of an error.
+@end defun
+
+@findex gdb.init_boolean_type
+@defun gdb.init_boolean_type (owner, bit_size, unsigned, name)
+This function creates a new @code{gdb.Type} instance corresponding to a
+boolean type owned by the given @code{owner}, with the given
+@code{name}, size and signedness.
+
+@code{owner} must be a reference to either a @code{gdb.Objfile} or a
+@code{gdb.Architecture} object. These correspond to objfile and
+architecture-owned types, respectively.
+
+@code{bit_size} is the size of instances of the newly created type, in
+bits. Currently, accepted values are limited to multiples of 8.
+
+@code{unsigned} is a boolean indicating whether the type corresponds to
+a signed or unsigned value.
+
+This function returns an instance of @code{gdb.Type}, and will throw an
+exception in case of an error.
+@end defun
+
+@findex gdb.init_float_type
+@defun gdb.init_float_type (owner, format, name)
+This function creates a new @code{gdb.Type} instance corresponding to a
+character type owned by the given @code{owner}, with the given
+@code{name} and @code{format}.
+
+@code{owner} must be a reference to either a @code{gdb.Objfile} or a
+@code{gdb.Architecture} object. These correspond to objfile and
+architecture-owned types, respectively.
+
+@code{format} is an reference to a @code{gdb.FloatFormat} object, as
+described below.
+
+This function returns an instance of @code{gdb.Type}, and will throw an
+exception in case of an error.
+@end defun
+
+@findex gdb.init_decfloat_type
+@defun gdb.init_decfloat_type (owner, bit_size, name)
+This function creates a new @code{gdb.Type} instance corresponding to a
+decimal floating point type owned by the given @code{owner}, with the
+given @code{name} and size.
+
+@code{owner} must be a reference to either a @code{gdb.Objfile} or a
+@code{gdb.Architecture} object. These correspond to objfile and
+architecture-owned types, respectively.
+
+@code{bit_size} is the size of instances of the newly created type, in
+bits. Currently, accepted values are limited to multiples of 8.
+
+This function returns an instance of @code{gdb.Type}, and will throw an
+exception in case of an error.
+@end defun
+
+@findex gdb.can_create_complex_type
+@defun gdb.can_create_complex_type (type)
+This function returns a boolean indicating whether @code{type} can be
+used to create a new complex type using the @code{gdb.init_complex_type}
+function.
+@end defun
+
+@findex gdb.init_complex_type
+@defun gdb.init_complex_type (type, name)
+This function creates a new @code{gdb.Type} instance corresponding to a
+complex type with the given @code{name} based on the given base
+@code{type}.
+
+The newly created type will be owned by the same object as the base
+type that was used to create it.
+
+This function returns an instance of @code{gdb.Type}, and will throw an
+exception in case of an error.
+@end defun
+
+@findex gdb.init_pointer_type
+@defun gdb.init_pointer_type (owner, target, bit_size, name)
+This function creates a new @code{gdb.Type} instance corresponding to a
+pointer type that points to @code{target} and is owned by the given
+@code{owner}, with the given @code{name} and size.
+
+@code{owner} must be a reference to either a @code{gdb.Objfile} or a
+@code{gdb.Architecture} object. These correspond to objfile and
+architecture-owned types, respectively.
+
+@code{target} is a @code{gdb.Type} object, corresponding to the type
+that will be pointed to by the newly created pointer type.
+
+@code{bit_size} is the size of instances of the newly created type, in
+bits. Currently, accepted values are limited to multiples of 8.
+
+This function returns an instance of @code{gdb.Type}, and will throw an
+exception in case of an error.
+@end defun
+
+@findex gdb.init_boolean_type
+@defun gdb.init_fixed_point_type (owner, bit_size, unsigned, name)
+This function creates a new @code{gdb.Type} instance corresponding to a
+fixed point type owned by the given @code{owner}, with the given
+@code{name}, size and signedness.
+
+@code{owner} must be a reference to either a @code{gdb.Objfile} or a
+@code{gdb.Architecture} object. These correspond to objfile and
+architecture-owned types, respectively.
+
+@code{bit_size} is the size of instances of the newly created type, in
+bits. Currently, accepted values are limited to multiples of 8.
+
+@code{unsigned} is a boolean indicating whether the type corresponds to
+a signed or unsigned value.
+
+This function returns an instance of @code{gdb.Type}, and will throw an
+exception in case of an error.
+@end defun
+
+When creating a floating point type through @code{gdb.init_float_type},
+one has to use a @code{gdb.FloatFormat} object. These objects may be
+created with no arguments, and the following attributes may be used to
+defined the format of the desired floating point format:
+
+@defvar FloatFormat.totalsize
+The size of the floating point number, in bits. Currently, accepted
+values are limited to multiples of 8.
+@end defvar
+
+@defvar FloatFormat.sign_start
+The bit offset of the sign bit.
+@end defvar
+
+@defvar FloatFormt.exp_start
+The bit offset of the start of the exponent.
+@end defvar
+
+@defvar FloatFormat.exp_len
+The size of the exponent, in bits.
+@end defvar
+
+@defvar FloatFormat.exp_bias
+Bias added to the written exponent to form the biased exponent.
+@end defvar
+
+@defvar FloatFormat.exp_nan
+Exponent value which indicates NaN.
+@end defvar
+
+@defvar FloatFormat.man_start
+The bit offset of the start of the mantissa.
+@end defvar
+
+@defvar FloatFormat.man_len
+The size of the mantissa, in bits.
+@end defvar
+
+@defvar FloatFormat.intbit
+This is a boolean values that indicates whether the integer bit is part
+of the value or if it is determined implicitly. A value of true
+indicates the former, while a value of false indicates the latter.
+@end defvar
+
+@defvar FloatFormat.name
+The name of the float format. Used internally, for debugging purposes.
+@end defvar
+
+
+
 @node Pretty Printing API
 @subsubsection Pretty Printing API
 @cindex python pretty printing api

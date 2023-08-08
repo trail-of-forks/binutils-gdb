@@ -514,4 +514,3 @@ gdbpy_init_fixed_point_type (PyObject *self, PyObject *args, PyObject *kw)
 
   return type_to_type_object (type);
 }
-

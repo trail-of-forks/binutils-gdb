@@ -170,6 +170,22 @@ info main
      (program-counter) values, and can be used as the frame-id when
      calling gdb.PendingFrame.create_unwind_info.
 
+  ** Functions that allow creation of instances of gdb.Type, and a new
+     class gdb.FloatFormat that may be used to create floating point
+     types. The functions that allow new type creation are:
+      - gdb.init_type: Create a new type given a type code.
+      - gdb.init_integer_type: Create a new integer type.
+      - gdb.init_character_type: Create a new character type.
+      - gdb.init_boolean_type: Create a new boolean type.
+      - gdb.init_float_type: Create a new floating point type.
+      - gdb.init_decfloat_type: Create a new decimal floating point type.
+      - gdb.can_create_complex_type: Whether a type can be used to create a
+          new complex type.
+      - gdb.init_complex_type: Create a new complex type.
+      - gdb.init_pointer_type: Create a new pointer type.
+          * This allows creating pointers of arbitrary size.
+      - gdb.init_fixed_point_type: Create a new fixed point type.
+
 *** Changes in GDB 13
 
 * MI version 1 is deprecated, and will be removed in GDB 14.

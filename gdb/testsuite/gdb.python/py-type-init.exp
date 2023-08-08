@@ -130,4 +130,3 @@ if { [build_inferior "${binfile}" "c"] == 0 } {
   # Test arch-owned type construction
   for_owner "gdb.inferiors()\[0\].architecture()"
 }
-

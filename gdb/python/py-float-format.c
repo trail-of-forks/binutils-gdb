@@ -249,7 +249,8 @@ static gdb_PyGetSetDef float_format_object_getset[] =
   { "exp_len", ffpy_get_exp_len, ffpy_set_exp_len,
     "The size of the exponent, in bits.", nullptr },
   { "exp_bias", ffpy_get_exp_bias, ffpy_set_exp_bias,
-    "Bias added to a \"true\" exponent to form the biased exponent.", nullptr },
+    "Bias added to the written exponent to form the biased exponent.",
+    nullptr },
   { "exp_nan", ffpy_get_exp_nan, ffpy_set_exp_nan,
     "Exponent value which indicates NaN.", nullptr },
   { "man_start", ffpy_get_man_start, ffpy_set_man_start,
@@ -304,5 +305,3 @@ PyTypeObject float_format_object_type =
   nullptr,			  /* tp_alloc */
   PyType_GenericNew,		  /* tp_new */
 };
-
-
