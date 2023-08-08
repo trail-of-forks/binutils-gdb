@@ -433,16 +433,25 @@ gdb::unique_xmalloc_ptr<char> gdbpy_parse_command_name
 PyObject *gdbpy_register_tui_window (PyObject *self, PyObject *args,
 				     PyObject *kw);
 
-PyObject *gdbpy_init_type (PyObject *self, PyObject *args);
-PyObject *gdbpy_init_integer_type (PyObject *self, PyObject *args);
-PyObject *gdbpy_init_character_type (PyObject *self, PyObject *args);
-PyObject *gdbpy_init_boolean_type (PyObject *self, PyObject *args);
-PyObject *gdbpy_init_float_type (PyObject *self, PyObject *args);
-PyObject *gdbpy_init_decfloat_type (PyObject *self, PyObject *args);
-PyObject *gdbpy_can_create_complex_type (PyObject *self, PyObject *args);
-PyObject *gdbpy_init_complex_type (PyObject *self, PyObject *args);
-PyObject *gdbpy_init_pointer_type (PyObject *self, PyObject *args);
-PyObject *gdbpy_init_fixed_point_type (PyObject *self, PyObject *args);
+PyObject *gdbpy_init_type (PyObject *self, PyObject *args, PyObject *kw);
+PyObject *gdbpy_init_integer_type (PyObject *self, PyObject *args,
+				   PyObject *kw);
+PyObject *gdbpy_init_character_type (PyObject *self, PyObject *args,
+				     PyObject *kw);
+PyObject *gdbpy_init_boolean_type (PyObject *self, PyObject *args,
+				   PyObject *kw);
+PyObject *gdbpy_init_float_type (PyObject *self, PyObject *args,
+				 PyObject *kw);
+PyObject *gdbpy_init_decfloat_type (PyObject *self, PyObject *args,
+				    PyObject *kw);
+PyObject *gdbpy_can_create_complex_type (PyObject *self, PyObject *args,
+					 PyObject *kw);
+PyObject *gdbpy_init_complex_type (PyObject *self, PyObject *args,
+				   PyObject *kw);
+PyObject *gdbpy_init_pointer_type (PyObject *self, PyObject *args,
+				   PyObject *kw);
+PyObject *gdbpy_init_fixed_point_type (PyObject *self, PyObject *args,
+				       PyObject *kw);
 
 PyObject *symtab_and_line_to_sal_object (struct symtab_and_line sal);
 PyObject *symtab_to_symtab_object (struct symtab *symtab);

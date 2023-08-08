@@ -230,7 +230,7 @@ ffpy_init (PyObject *self,
 struct floatformat *
 float_format_object_as_float_format (PyObject *self)
 {
-  if (!PyObject_TypeCheck (self, (PyObject*) &float_format_object_type))
+  if (!PyObject_TypeCheck (self, &float_format_object_type))
     {
       PyErr_SetString(PyExc_TypeError, "expected gdb.FloatFormat");
       return nullptr;
